@@ -1,0 +1,40 @@
+{
+  "name": "llvm-sauce",
+  "version": "1.0.0",
+  "description": "A yummy source to llvm IR compiler!",
+  "main": "dist/index",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:ci": "prettier --list-different \"src/**/*.{ts,tsx}\"",
+    "eslint": "eslint --ext \".ts,.tsx\" src",
+    "build": "yarn tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiachen247/llvm-sauce.git"
+  },
+  "author": "jiachen247",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jiachen247/llvm-sauce/issues"
+  },
+  "homepage": "https://github.com/jiachen247/llvm-sauce#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn eslint --fix && yarn format && yarn eslint",
+      "pre-push": "yarn ci"
+    }
+  },
+  "devDependencies": {
+    "eslint": "^7.20.0",
+    "eslint-config-prettier": "^7.2.0",
+    "husky": "^5.0.9",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "typescript": "^4.1.5"
+  },
+  "dependencies": {
+    "js-slang": "^0.4.71"
+  }
+}

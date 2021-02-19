@@ -1,0 +1,9 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 100,
+  "parser": "typescript",
+  "trailingComma": "none",
+  "arrowParens": "avoid"
+}
+© 2021 GitHub, Inc.
