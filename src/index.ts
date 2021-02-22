@@ -11,31 +11,37 @@ export class CompileError extends Error {
 
 function main() {
   const opt = require('node-getopt')
-    .create([['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '1']])
+    .create([
+      ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '1'],
+      ['p', 'pretty', 'enable pretty printing on parsed JSON'],
+      ['h', 'help', 'print this help']
+    ])
     .bindHelp()
-    .setHelp('Usage: llvm-sauce [OPTION] filename\n\n')
     .parseSystem()
 
-  const chapter = parseInt(opt.options.chapter, 10)
   const filename = opt.argv[0]
-
   if (!filename || filename === '') {
-    console.log('Usage: llvm-sauce [OPTION] filename\n\n')
+    console.info(opt.getHelp())
     return
   }
   const code = fs.readFileSync(filename, 'utf8')
 
-  compile(chapter, code)
+  compile(opt.options, code)
 }
 
-function compile(chapter: number, code: string) {
+function compile(options: any, code: string) {
+  const chapter = parseInt(options.chapter, 10)
+  const pretty = options.pretty;
   const context: Context = createContext(chapter)
   let estree: es.Program | undefined = slang_parse(code, context)
 
   if (!estree) {
     return Promise.reject(new CompileError('js-slang cannot parse the program'))
   }
-  let es_str: string = JSON.stringify(estree)
+
+  let es_str: string = pretty
+    ? JSON.stringify(estree, null, 4)
+    : JSON.stringify(estree)
 
   console.log(es_str)
 
