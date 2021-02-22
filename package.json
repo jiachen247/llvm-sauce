@@ -9,7 +9,7 @@
     "format:ci": "prettier --list-different \"src/**/*.{ts,tsx}\"",
     "eslint": "eslint --ext \".ts,.tsx\" src",
     "build": "yarn tsc",
-    "start": "node ./dist/index.js"
+    "start": "yarn tsc && node ./dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "js-slang": "^0.4.71",
+    "llvm-node": "^3.0.0",
     "node-getopt": "^0.3.2"
   }
 }
