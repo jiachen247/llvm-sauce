@@ -2,17 +2,19 @@ import { Context, createContext } from 'js-slang'
 import { parse as slang_parse } from 'js-slang/dist/parser/parser'
 import * as es from 'estree'
 import * as fs from 'fs'
+import * as llvm from 'llvm-node'
+import { eval_toplevel } from './codegen/index'
 
 export class CompileError extends Error {
   constructor(message: string) {
-    super(message)
-  }
+    super(message) }
 }
 
 function main() {
   const opt = require('node-getopt')
     .create([
       ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '1'],
+      ['o', 'output=FILE', 'writes LLVM bytecode to a file, otherwise we print to stdout'],
       ['p', 'pretty', 'enable pretty printing on parsed JSON'],
       ['h', 'help', 'print this help']
     ])
@@ -42,8 +44,15 @@ function compile(options: any, code: string) {
   let es_str: string = pretty
     ? JSON.stringify(estree, null, 4)
     : JSON.stringify(estree)
-
   console.log(es_str)
+
+  const outputFile = options.output;
+  const module = eval_toplevel(estree)
+  if (outputFile) {
+    llvm.writeBitcodeToFile(module, outputFile)
+  } else {
+    console.log(module.print());
+  }
 
   // compile should return LLVM IR
   return Promise.resolve(es_str)
