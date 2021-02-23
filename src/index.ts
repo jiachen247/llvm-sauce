@@ -2,7 +2,7 @@ import { Context, createContext } from 'js-slang'
 import { parse as slang_parse } from 'js-slang/dist/parser/parser'
 import * as es from 'estree'
 import * as fs from 'fs'
-import llvm from 'llvm-node'
+import * as llvm from 'llvm-node'
 import { eval_toplevel } from './codegen/index'
 
 export class CompileError extends Error {

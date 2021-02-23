@@ -47,7 +47,9 @@ class BinaryExpression {
     const operator = node.operator
     switch (operator) {
       case '+':
-        return lObj.builder.createFAdd(left, right)
+        const fadd = lObj.builder.createFAdd(left, right)
+        console.log(fadd)
+        return fadd
       case '-':
         return lObj.builder.createFSub(left, right)
       case '*':
@@ -71,16 +73,20 @@ class VariableDeclarationExpression {
     const init = decl.init
     let name: string | undefined
     let value: any
-    let raw: string | undefined
     let type: Type
+    let initializer
     if (id.type === 'Identifier') name = id.name
-    if (init && init.type === 'Literal') {
-      value = init.value
-      raw = init.raw
+    if (init) {
+      switch (init.type) {
+        case "Literal":
+          value = init.value
+          break;
+        default:
+          value = evaluate(init, env, lObj)
+      }
     }
     if (!value || !name)
-      throw new Error('Something wrong with the literal\n' + JSON.stringify(node, null, 2))
-    let initializer
+      throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
     let allocInst: l.AllocaInst
     let storeInst: l.Value
     switch (typeof value) {
@@ -94,21 +100,22 @@ class VariableDeclarationExpression {
         type = Type.STRING
         break
       case 'number':
-        const doubleType = l.Type.getDoubleTy(context)
         initializer = l.ConstantFP.get(context, value)
-        allocInst = builder.createAlloca(doubleType, undefined, name)
+        allocInst = builder.createAlloca(l.Type.getDoubleTy(context), undefined, name)
         storeInst = builder.createStore(initializer, allocInst, false)
         type = Type.NUMBER
         break
       case 'boolean':
-        const intType = l.Type.getInt32Ty(context)
         initializer = value ? l.ConstantInt.getTrue(context) : l.ConstantInt.getFalse(context)
-        allocInst = builder.createAlloca(intType, undefined, name)
+        allocInst = builder.createAlloca(l.Type.getInt32Ty(context), undefined, name)
         storeInst = builder.createStore(initializer, allocInst, false)
         type = Type.BOOLEAN
         break
       default:
-        throw new Error('Unrecognized datatype')
+        const defaultType = l.Type.getDoubleTy(context)
+        allocInst = builder.createAlloca(defaultType, undefined, name)
+        storeInst = builder.createStore(value, allocInst, false)
+        type = Type.NUMBER
     }
     env.push(name, { type, value: allocInst })
     return allocInst
