@@ -3,7 +3,7 @@ import { parse as slang_parse } from 'js-slang/dist/parser/parser'
 import * as es from 'estree'
 import * as fs from 'fs'
 import * as llvm from 'llvm-node'
-import { eval_toplevel } from './codegen/index'
+import { eval_toplevel } from './codegen/codegen'
 
 export class CompileError extends Error {
   constructor(message: string) {
@@ -41,9 +41,8 @@ function compile(options: any, code: string) {
     return Promise.reject(new CompileError('js-slang cannot parse the program'))
   }
 
-  let es_str: string = JSON.stringify(estree, null, 4) 
-  if (options.pretty)
-    console.log(es_str)
+  let es_str: string = JSON.stringify(estree, null, 4)
+  if (options.pretty) console.log(es_str)
 
   const outputFile = options.output
   const module = eval_toplevel(estree)

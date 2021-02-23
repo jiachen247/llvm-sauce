@@ -44,7 +44,11 @@ class Expression {
   }
 }
 class BinaryExpression {
-  static codegen(node: es.BinaryExpression | es.LogicalExpression, env: Environment, lObj: LLVMObjs): l.Value {
+  static codegen(
+    node: es.BinaryExpression | es.LogicalExpression,
+    env: Environment,
+    lObj: LLVMObjs
+  ): l.Value {
     const lhs = evaluate({ node: node.left, env, lObj })
     const rhs = evaluate({ node: node.right, env, lObj })
     const left = lhs.type.isPointerTy() ? lObj.builder.createLoad(lhs) : lhs
@@ -56,15 +60,17 @@ class BinaryExpression {
         // Therefore we just assume int implies char. If we get an int array we
         // do concatenation. We can consider a tagged data structure in the
         // future.
-        if (left.type.isPointerTy()
-          && right.type.isPointerTy()
-          && left.type.elementType.isArrayTy()
-          && right.type.elementType.isArrayTy()){
+        if (
+          left.type.isPointerTy() &&
+          right.type.isPointerTy() &&
+          left.type.elementType.isArrayTy() &&
+          right.type.elementType.isArrayTy()
+        ) {
           let lt = left.type.elementType as l.ArrayType
           let rt = right.type.elementType as l.ArrayType
-          if (lt.elementType.isIntegerTy() && rt.elementType.isIntegerTy()){
-            const llen = lt.numElements;
-            const rlen = rt.numElements;
+          if (lt.elementType.isIntegerTy() && rt.elementType.isIntegerTy()) {
+            const llen = lt.numElements
+            const rlen = rt.numElements
           }
         }
         return lObj.builder.createFAdd(left, right)
@@ -78,15 +84,15 @@ class BinaryExpression {
         return lObj.builder.createFCmpOLT(left, right)
       case '>':
         return lObj.builder.createFCmpOGT(left, right)
-      case "===":
+      case '===':
         return lObj.builder.createFCmpOEQ(left, right)
-      case "<=":
+      case '<=':
         return lObj.builder.createFCmpOLE(left, right)
-      case ">=":
+      case '>=':
         return lObj.builder.createFCmpOGE(left, right)
-      case "&&":
+      case '&&':
         return lObj.builder.createAnd(left, right)
-      case "||":
+      case '||':
         return lObj.builder.createOr(left, right)
       default:
         throw new Error('Unknown operator ' + operator)
@@ -110,20 +116,20 @@ class LiteralExpression {
   static codegen(node: es.Literal, env: Environment, lObj: LLVMObjs): l.Value {
     let value = node.value
     switch (typeof value) {
-      case "string":
-        return lObj.builder.createGlobalStringPtr(value, "str")
-        /*
+      case 'string':
+        return lObj.builder.createGlobalStringPtr(value, 'str')
+      /*
         const len = value.length
         const arrayType = l.ArrayType.get(l.Type.getInt32Ty(lObj.context), len)
         const elements = Array.from(value).map(x => l.ConstantInt.get(lObj.context, x.charCodeAt(0)))
         return l.ConstantArray.get(arrayType, elements)
         */
-      case "number":
+      case 'number':
         return l.ConstantFP.get(lObj.context, value)
-      case "boolean":
+      case 'boolean':
         return value ? l.ConstantInt.getTrue(lObj.context) : l.ConstantInt.getFalse(lObj.context)
       default:
-        throw new Error("Unimplemented literal type " + typeof value)
+        throw new Error('Unimplemented literal type ' + typeof value)
     }
   }
 }
@@ -131,18 +137,16 @@ class CallExpression {
   static codegen(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
     const callee = (node.callee as es.Identifier).name
     // TODO: This does not allow for expressions as args.
-    const args = (node.arguments).map(x => evaluate({node: x, env, lObj}))
-    const builtins : { [id: string] : () => l.FunctionCallee } = {
-      "display": () => CallExpression.puts(lObj)
+    const args = node.arguments.map(x => evaluate({ node: x, env, lObj }))
+    const builtins: { [id: string]: () => l.FunctionCallee } = {
+      display: () => CallExpression.puts(lObj)
     }
-    const built = builtins[callee];
+    const built = builtins[callee]
     let fun
     if (!built) {
       const fun = lObj.module.getFunction(callee)
-      if (!fun)
-        throw new Error("Undefined function " + callee)
-      else
-        return lObj.builder.createCall((fun.type.elementType as l.FunctionType), fun, args)
+      if (!fun) throw new Error('Undefined function ' + callee)
+      else return lObj.builder.createCall(fun.type.elementType as l.FunctionType, fun, args)
     } else {
       fun = built() // a bit of that lazy evaluation
       return lObj.builder.createCall(fun.functionType, fun.callee, args)
@@ -152,7 +156,7 @@ class CallExpression {
   static puts(lObj: LLVMObjs) {
     const argstype = [l.Type.getInt8PtrTy(lObj.context)]
     const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, false)
-    return lObj.module.getOrInsertFunction("puts", funtype)
+    return lObj.module.getOrInsertFunction('puts', funtype)
   }
 }
 class VariableDeclarationExpression {
@@ -179,28 +183,36 @@ class VariableDeclarationExpression {
   }
 }
 
-function evaluate({ node, env, lObj }: { node: es.Node; env: Environment; lObj: LLVMObjs }): l.Value {
-  switch(node.type) {
-    case "Program":
+function evaluate({
+  node,
+  env,
+  lObj
+}: {
+  node: es.Node
+  env: Environment
+  lObj: LLVMObjs
+}): l.Value {
+  switch (node.type) {
+    case 'Program':
       return ProgramExpression.codegen(node, env, lObj)
-    case "VariableDeclaration":
+    case 'VariableDeclaration':
       return VariableDeclarationExpression.codegen(node, env, lObj)
-    case "Identifier":
+    case 'Identifier':
       return IndentifierExpression.codegen(node, env, lObj)
-    case "ExpressionStatement":
+    case 'ExpressionStatement':
       return Expression.codegen(node, env, lObj)
-    case "UnaryExpression":
+    case 'UnaryExpression':
       return UnaryExpression.codegen(node, env, lObj)
-    case "LogicalExpression":
+    case 'LogicalExpression':
       return BinaryExpression.codegen(node, env, lObj)
-    case "BinaryExpression":
+    case 'BinaryExpression':
       return BinaryExpression.codegen(node, env, lObj)
-    case "Literal":
+    case 'Literal':
       return LiteralExpression.codegen(node, env, lObj)
-    case "CallExpression":
+    case 'CallExpression':
       return CallExpression.codegen(node, env, lObj)
     default:
-      throw new Error("Not implemented. " + JSON.stringify(node))
+      throw new Error('Not implemented. ' + JSON.stringify(node))
   }
 }
 
