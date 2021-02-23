@@ -2,12 +2,13 @@ import { Context, createContext } from 'js-slang'
 import { parse as slang_parse } from 'js-slang/dist/parser/parser'
 import * as es from 'estree'
 import * as fs from 'fs'
-import * as llvm from 'llvm-node'
+import llvm from 'llvm-node'
 import { eval_toplevel } from './codegen/index'
 
 export class CompileError extends Error {
   constructor(message: string) {
-    super(message) }
+    super(message)
+  }
 }
 
 function main() {
@@ -33,7 +34,7 @@ function main() {
 
 function compile(options: any, code: string) {
   const chapter = parseInt(options.chapter, 10)
-  const pretty = options.pretty;
+  const pretty = options.pretty
   const context: Context = createContext(chapter)
   let estree: es.Program | undefined = slang_parse(code, context)
 
@@ -41,17 +42,15 @@ function compile(options: any, code: string) {
     return Promise.reject(new CompileError('js-slang cannot parse the program'))
   }
 
-  let es_str: string = pretty
-    ? JSON.stringify(estree, null, 4)
-    : JSON.stringify(estree)
+  let es_str: string = pretty ? JSON.stringify(estree, null, 4) : JSON.stringify(estree)
   console.log(es_str)
 
-  const outputFile = options.output;
+  const outputFile = options.output
   const module = eval_toplevel(estree)
   if (outputFile) {
     llvm.writeBitcodeToFile(module, outputFile)
   } else {
-    console.log(module.print());
+    console.log(module.print())
   }
 
   // compile should return LLVM IR
