@@ -1,2 +1,3 @@
 const santa = "hohoho";
-display(santa);
+const claus = 420;
+display(santa, claus);

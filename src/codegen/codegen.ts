@@ -1,5 +1,6 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
+import { formatWithOptions } from 'util'
 import { Environment, Type, TypeRecord } from '../context/environment'
 
 interface LLVMObjs {
@@ -138,8 +139,8 @@ class CallExpression {
     const callee = (node.callee as es.Identifier).name
     // TODO: This does not allow for expressions as args.
     const args = node.arguments.map(x => evaluate({ node: x, env, lObj }))
-    const builtins: { [id: string]: () => l.FunctionCallee } = {
-      display: () => CallExpression.puts(lObj)
+    const builtins: { [id: string]: () => l.CallInst } = {
+      display: () => CallExpression.display(args, lObj)
     }
     const built = builtins[callee]
     let fun
@@ -148,15 +149,18 @@ class CallExpression {
       if (!fun) throw new Error('Undefined function ' + callee)
       else return lObj.builder.createCall(fun.type.elementType as l.FunctionType, fun, args)
     } else {
-      fun = built() // a bit of that lazy evaluation
-      return lObj.builder.createCall(fun.functionType, fun.callee, args)
+      return built() // a bit of that lazy evaluation
     }
   }
 
-  static puts(lObj: LLVMObjs) {
+  // Prints number or strings. Vararg.
+  static display(args: l.Value[], lObj: LLVMObjs) {
+    const fmt = args.map(x => x.type.isDoubleTy() ? "%f" : "%s").join(" ")
+    const fmtptr = lObj.builder.createGlobalStringPtr(fmt, "format")
     const argstype = [l.Type.getInt8PtrTy(lObj.context)]
-    const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, false)
-    return lObj.module.getOrInsertFunction('puts', funtype)
+    const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, true)
+    const fun = lObj.module.getOrInsertFunction('printf', funtype)
+    return lObj.builder.createCall(fun.functionType, fun.callee, [fmtptr].concat(args))
   }
 }
 class VariableDeclarationExpression {
