@@ -16,7 +16,7 @@ function main() {
     .create([
       ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '1'],
       ['o', 'output=FILE', 'writes LLVM bytecode to a file, otherwise we print to stdout'],
-      ['p', 'pretty', 'enable pretty printing on parsed JSON'],
+      ['p', 'pretty', 'enable printing the parsed JSON'],
       ['h', 'help', 'print this help']
     ])
     .bindHelp()
@@ -34,7 +34,6 @@ function main() {
 
 function compile(options: any, code: string) {
   const chapter = parseInt(options.chapter, 10)
-  const pretty = options.pretty
   const context: Context = createContext(chapter)
   let estree: es.Program | undefined = slang_parse(code, context)
 
@@ -42,8 +41,9 @@ function compile(options: any, code: string) {
     return Promise.reject(new CompileError('js-slang cannot parse the program'))
   }
 
-  let es_str: string = pretty ? JSON.stringify(estree, null, 4) : JSON.stringify(estree)
-  console.log(es_str)
+  let es_str: string = JSON.stringify(estree, null, 4) 
+  if (options.pretty)
+    console.log(es_str)
 
   const outputFile = options.output
   const module = eval_toplevel(estree)
