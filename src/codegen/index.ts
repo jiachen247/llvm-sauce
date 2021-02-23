@@ -47,9 +47,7 @@ class BinaryExpression {
     const operator = node.operator
     switch (operator) {
       case '+':
-        const fadd = lObj.builder.createFAdd(left, right)
-        console.log(fadd)
-        return fadd
+        return lObj.builder.createFAdd(left, right)
       case '-':
         return lObj.builder.createFSub(left, right)
       case '*':
@@ -70,6 +68,19 @@ class BinaryExpression {
         return lObj.builder.createAnd(left, right)
       case "||":
         return lObj.builder.createOr(left, right)
+      default:
+        throw new Error('Unknown operator ' + operator)
+    }
+  }
+}
+class UnaryExpression {
+  static codegen(node: es.UnaryExpression, env: Environment, lObj: LLVMObjs): l.Value {
+    const operator = node.operator
+    const arg = evaluate({ node: node.argument, env, lObj })
+    const val = arg.type.isPointerTy() ? lObj.builder.createLoad(arg) : arg
+    switch (operator) {
+      case '!':
+        return lObj.builder.createNot(val)
       default:
         throw new Error('Unknown operator ' + operator)
     }
@@ -134,6 +145,8 @@ function evaluate({ node, env, lObj }: { node: es.Node; env: Environment; lObj: 
       return IndentifierExpression.codegen(node, env, lObj)
     case "ExpressionStatement":
       return Expression.codegen(node, env, lObj)
+    case "UnaryExpression":
+      return UnaryExpression.codegen(node, env, lObj)
     case "LogicalExpression":
       return BinaryExpression.codegen(node, env, lObj)
     case "BinaryExpression":
