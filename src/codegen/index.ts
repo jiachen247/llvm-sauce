@@ -19,7 +19,7 @@ class ProgramExpression {
     )
     const entry = l.BasicBlock.create(lObj.context, 'entry', mainFun)
     lObj.builder.setInsertionPoint(entry)
-    node.body.map(x => evaluate(x, env, lObj))
+    node.body.map(x => evaluate({ node: x, env, lObj }))
     lObj.builder.createRetVoid()
     l.verifyFunction(mainFun)
     return mainFun
@@ -35,15 +35,15 @@ class IndentifierExpression {
 class Expression {
   static codegen(node: es.ExpressionStatement, env: Environment, lObj: LLVMObjs): l.Value {
     const expr = node.expression
-    return evaluate(expr, env, lObj)
+    return evaluate({ node: expr, env, lObj })
   }
 }
 class BinaryExpression {
-  static codegen(node: es.BinaryExpression, env: Environment, lObj: LLVMObjs): l.Value {
-    const lhs = evaluate(node.left, env, lObj)
-    const rhs = evaluate(node.right, env, lObj)
-    const left = lObj.builder.createLoad(lhs)
-    const right = lObj.builder.createLoad(rhs)
+  static codegen(node: es.BinaryExpression | es.LogicalExpression, env: Environment, lObj: LLVMObjs): l.Value {
+    const lhs = evaluate({ node: node.left, env, lObj })
+    const rhs = evaluate({ node: node.right, env, lObj })
+    const left = lhs.type.isPointerTy() ? lObj.builder.createLoad(lhs) : lhs
+    const right = lhs.type.isPointerTy() ? lObj.builder.createLoad(rhs) : rhs
     const operator = node.operator
     switch (operator) {
       case '+':
@@ -66,8 +66,30 @@ class BinaryExpression {
         return lObj.builder.createFCmpOLE(left, right)
       case ">=":
         return lObj.builder.createFCmpOGE(left, right)
+      case "&&":
+        return lObj.builder.createAnd(left, right)
+      case "||":
+        return lObj.builder.createOr(left, right)
       default:
         throw new Error('Unknown operator ' + operator)
+    }
+  }
+}
+class LiteralExpression {
+  static codegen(node: es.Literal, env: Environment, lObj: LLVMObjs): l.Value {
+    let value = node.value
+    switch (typeof value) {
+      case "string":
+        const len = value.length
+        const arrayType = l.ArrayType.get(l.Type.getInt32Ty(lObj.context), len)
+        const elements = Array.from(value).map(x => l.ConstantInt.get(lObj.context, x.charCodeAt(0)))
+        return l.ConstantArray.get(arrayType, elements)
+      case "number":
+        return l.ConstantFP.get(lObj.context, value)
+      case "boolean":
+        return value ? l.ConstantInt.getTrue(lObj.context) : l.ConstantInt.getFalse(lObj.context)
+      default:
+        throw new Error("Unimplemented literal type " + typeof value)
     }
   }
 }
@@ -87,63 +109,40 @@ class VariableDeclarationExpression {
     let initializer
     if (id.type === 'Identifier') name = id.name
     if (init) {
-      switch (init.type) {
-        case "Literal":
-          value = init.value
-          break;
-        default:
-          value = evaluate(init, env, lObj)
-      }
+      value = evaluate({ node: init, env, lObj })
     }
-    if (!value || !name)
+    if (value === undefined || !name) {
+      console.log(value)
       throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
+    }
     let allocInst: l.AllocaInst
     let storeInst: l.Value
-    switch (typeof value) {
-      case 'string':
-        const len = value.length
-        const arrayType = l.ArrayType.get(l.Type.getInt32Ty(context), len)
-        const elements = Array.from(value).map(x => l.ConstantInt.get(context, x.charCodeAt(0)))
-        initializer = l.ConstantArray.get(arrayType, elements)
-        allocInst = builder.createAlloca(arrayType, undefined, name)
-        storeInst = builder.createStore(initializer, allocInst, false)
-        type = Type.STRING
-        break
-      case 'number':
-        initializer = l.ConstantFP.get(context, value)
-        allocInst = builder.createAlloca(l.Type.getDoubleTy(context), undefined, name)
-        storeInst = builder.createStore(initializer, allocInst, false)
-        type = Type.NUMBER
-        break
-      case 'boolean':
-        initializer = value ? l.ConstantInt.getTrue(context) : l.ConstantInt.getFalse(context)
-        allocInst = builder.createAlloca(l.Type.getInt1Ty(context), undefined, name)
-        storeInst = builder.createStore(initializer, allocInst, false)
-        type = Type.BOOLEAN
-        break
-      default:
-        if (!(value instanceof l.Value)) {
-          throw new Error("Something wrong with evaluated expression " + value) 
-        }
-        allocInst = builder.createAlloca(value.type, undefined, name)
-        storeInst = builder.createStore(value, allocInst, false)
-        type = Type.NUMBER
-    }
-    env.push(name, { type, value: allocInst })
+    allocInst = builder.createAlloca(value.type, undefined, name)
+    storeInst = builder.createStore(value, allocInst, false)
+    env.push(name, { value: allocInst })
     return allocInst
   }
 }
 
-const jumpTable = {
-  Program: ProgramExpression.codegen,
-  VariableDeclaration: VariableDeclarationExpression.codegen,
-  Identifier: IndentifierExpression.codegen,
-  ExpressionStatement: Expression.codegen,
-  BinaryExpression: BinaryExpression.codegen
-}
-
-function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
-  return jumpTable[node.type](node, env, lObj)
+function evaluate({ node, env, lObj }: { node: es.Node; env: Environment; lObj: LLVMObjs }): l.Value {
+  switch(node.type) {
+    case "Program":
+      return ProgramExpression.codegen(node, env, lObj)
+    case "VariableDeclaration":
+      return VariableDeclarationExpression.codegen(node, env, lObj)
+    case "Identifier":
+      return IndentifierExpression.codegen(node, env, lObj)
+    case "ExpressionStatement":
+      return Expression.codegen(node, env, lObj)
+    case "LogicalExpression":
+      return BinaryExpression.codegen(node, env, lObj)
+    case "BinaryExpression":
+      return BinaryExpression.codegen(node, env, lObj)
+    case "Literal":
+      return LiteralExpression.codegen(node, env, lObj)
+    default:
+      throw new Error("Not implemented. " + JSON.stringify(node))
+  }
 }
 
 function eval_toplevel(node: es.Node) {
@@ -151,7 +150,7 @@ function eval_toplevel(node: es.Node) {
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
   const env = new Environment(new Map<string, TypeRecord>(), undefined)
-  evaluate(node, env, { context, module, builder })
+  evaluate({ node, env, lObj: { context, module, builder } })
   return module
 }
 
