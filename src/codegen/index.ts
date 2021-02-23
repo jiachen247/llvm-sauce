@@ -21,7 +21,12 @@ class ProgramExpression {
     lObj.builder.setInsertionPoint(entry)
     node.body.map(x => evaluate({ node: x, env, lObj }))
     lObj.builder.createRetVoid()
-    l.verifyFunction(mainFun)
+    try {
+      l.verifyFunction(mainFun)
+    } catch (e) {
+      console.error(lObj.module.print())
+      throw e
+    }
     return mainFun
   }
 }
@@ -43,7 +48,7 @@ class BinaryExpression {
     const lhs = evaluate({ node: node.left, env, lObj })
     const rhs = evaluate({ node: node.right, env, lObj })
     const left = lhs.type.isPointerTy() ? lObj.builder.createLoad(lhs) : lhs
-    const right = lhs.type.isPointerTy() ? lObj.builder.createLoad(rhs) : rhs
+    const right = rhs.type.isPointerTy() ? lObj.builder.createLoad(rhs) : rhs
     const operator = node.operator
     switch (operator) {
       case '+':
