@@ -1,3 +1,4 @@
+import { Value } from 'llvm-node'
 enum Type {
   BOOLEAN,
   FUNCTION,
@@ -6,7 +7,8 @@ enum Type {
 }
 
 interface TypeRecord {
-  type: Type
+  value: Value
+  type?: Type
   // For functions, this records the function signature. [A, B] means sig of A => B.
   funSig?: [Type[], Type[]]
 }
@@ -21,6 +23,10 @@ class Environment {
 
   push(name: string, tr: TypeRecord): void {
     this.names.set(name, tr)
+  }
+
+  get(name: string): TypeRecord | undefined {
+    return this.names.get(name)
   }
 
   setChild(theChild: Environment): void {
