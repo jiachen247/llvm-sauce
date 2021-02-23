@@ -33,7 +33,7 @@ class ProgramExpression {
 class IndentifierExpression {
   static codegen(node: es.Identifier, env: Environment, lObj: LLVMObjs): l.Value {
     const v = env.get(node.name)
-    if (v) return v.value
+    if (v) return lObj.builder.createLoad(v.value)
     else throw new Error('Cannot find name ' + node.name)
   }
 }
@@ -52,6 +52,21 @@ class BinaryExpression {
     const operator = node.operator
     switch (operator) {
       case '+':
+        // It is a hack. We do not have int arrays. All numbers are double.
+        // Therefore we just assume int implies char. If we get an int array we
+        // do concatenation. We can consider a tagged data structure in the
+        // future.
+        if (left.type.isPointerTy()
+          && right.type.isPointerTy()
+          && left.type.elementType.isArrayTy()
+          && right.type.elementType.isArrayTy()){
+          let lt = left.type.elementType as l.ArrayType
+          let rt = right.type.elementType as l.ArrayType
+          if (lt.elementType.isIntegerTy() && rt.elementType.isIntegerTy()){
+            const llen = lt.numElements;
+            const rlen = rt.numElements;
+          }
+        }
         return lObj.builder.createFAdd(left, right)
       case '-':
         return lObj.builder.createFSub(left, right)
@@ -96,10 +111,13 @@ class LiteralExpression {
     let value = node.value
     switch (typeof value) {
       case "string":
+        return lObj.builder.createGlobalStringPtr(value, "str")
+        /*
         const len = value.length
         const arrayType = l.ArrayType.get(l.Type.getInt32Ty(lObj.context), len)
         const elements = Array.from(value).map(x => l.ConstantInt.get(lObj.context, x.charCodeAt(0)))
         return l.ConstantArray.get(arrayType, elements)
+        */
       case "number":
         return l.ConstantFP.get(lObj.context, value)
       case "boolean":
@@ -109,32 +127,53 @@ class LiteralExpression {
     }
   }
 }
+class CallExpression {
+  static codegen(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
+    const callee = (node.callee as es.Identifier).name
+    // TODO: This does not allow for expressions as args.
+    const args = (node.arguments).map(x => evaluate({node: x, env, lObj}))
+    const builtins : { [id: string] : () => l.FunctionCallee } = {
+      "display": () => CallExpression.puts(lObj)
+    }
+    const built = builtins[callee];
+    let fun
+    if (!built) {
+      const fun = lObj.module.getFunction(callee)
+      if (!fun)
+        throw new Error("Undefined function " + callee)
+      else
+        return lObj.builder.createCall((fun.type.elementType as l.FunctionType), fun, args)
+    } else {
+      fun = built() // a bit of that lazy evaluation
+      return lObj.builder.createCall(fun.functionType, fun.callee, args)
+    }
+  }
+
+  static puts(lObj: LLVMObjs) {
+    const argstype = [l.Type.getInt8PtrTy(lObj.context)]
+    const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, false)
+    return lObj.module.getOrInsertFunction("puts", funtype)
+  }
+}
 class VariableDeclarationExpression {
   static codegen(node: es.VariableDeclaration, env: Environment, lObj: LLVMObjs): l.Value {
     const kind = node.kind
     if (kind !== 'const') throw new Error('We can only do const right now')
-    const context = lObj.context
-    const module = lObj.module
     const builder = lObj.builder
     const decl = node.declarations[0]
     const id = decl.id
     const init = decl.init
     let name: string | undefined
     let value: any
-    let type: Type
-    let initializer
     if (id.type === 'Identifier') name = id.name
     if (init) {
       value = evaluate({ node: init, env, lObj })
     }
     if (value === undefined || !name) {
-      console.log(value)
       throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
     }
-    let allocInst: l.AllocaInst
-    let storeInst: l.Value
-    allocInst = builder.createAlloca(value.type, undefined, name)
-    storeInst = builder.createStore(value, allocInst, false)
+    let allocInst = builder.createAlloca(value.type, undefined, name)
+    let storeInst = builder.createStore(value, allocInst, false)
     env.push(name, { value: allocInst })
     return allocInst
   }
@@ -158,6 +197,8 @@ function evaluate({ node, env, lObj }: { node: es.Node; env: Environment; lObj: 
       return BinaryExpression.codegen(node, env, lObj)
     case "Literal":
       return LiteralExpression.codegen(node, env, lObj)
+    case "CallExpression":
+      return CallExpression.codegen(node, env, lObj)
     default:
       throw new Error("Not implemented. " + JSON.stringify(node))
   }
