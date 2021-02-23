@@ -56,6 +56,16 @@ class BinaryExpression {
         return lObj.builder.createFMul(left, right)
       case '/':
         return lObj.builder.createFDiv(left, right)
+      case '<':
+        return lObj.builder.createFCmpOLT(left, right)
+      case '>':
+        return lObj.builder.createFCmpOGT(left, right)
+      case "===":
+        return lObj.builder.createFCmpOEQ(left, right)
+      case "<=":
+        return lObj.builder.createFCmpOLE(left, right)
+      case ">=":
+        return lObj.builder.createFCmpOGE(left, right)
       default:
         throw new Error('Unknown operator ' + operator)
     }
@@ -107,13 +117,15 @@ class VariableDeclarationExpression {
         break
       case 'boolean':
         initializer = value ? l.ConstantInt.getTrue(context) : l.ConstantInt.getFalse(context)
-        allocInst = builder.createAlloca(l.Type.getInt32Ty(context), undefined, name)
+        allocInst = builder.createAlloca(l.Type.getInt1Ty(context), undefined, name)
         storeInst = builder.createStore(initializer, allocInst, false)
         type = Type.BOOLEAN
         break
       default:
-        const defaultType = l.Type.getDoubleTy(context)
-        allocInst = builder.createAlloca(defaultType, undefined, name)
+        if (!(value instanceof l.Value)) {
+          throw new Error("Something wrong with evaluated expression " + value) 
+        }
+        allocInst = builder.createAlloca(value.type, undefined, name)
         storeInst = builder.createStore(value, allocInst, false)
         type = Type.NUMBER
     }
