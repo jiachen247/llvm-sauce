@@ -1,9 +1,11 @@
 import { Value } from 'llvm-node'
 enum Type {
+  ARRAY,
   BOOLEAN,
   FUNCTION,
   NUMBER,
-  STRING
+  STRING,
+  UNKNOWN
 }
 
 interface TypeRecord {
@@ -14,11 +16,12 @@ interface TypeRecord {
 }
 
 class Environment {
-  names: Map<string, TypeRecord>
-  child: Environment | undefined
-  constructor(theNames: Map<string, TypeRecord>, theChild: Environment | undefined) {
+  private names: Map<string, TypeRecord>
+  private globals: Map<any, Value>
+  private child?: Environment
+  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
     this.names = theNames
-    this.child = theChild
+    this.globals = theGlobals
   }
 
   push(name: string, tr: TypeRecord): void {
@@ -27,6 +30,20 @@ class Environment {
 
   get(name: string): TypeRecord | undefined {
     return this.names.get(name)
+  }
+
+  getGlobal(name: any): Value | undefined {
+    return this.globals.get(name)
+  }
+
+  add(name: string, value: TypeRecord): TypeRecord {
+    this.names.set(name, value)
+    return value
+  }
+
+  addGlobal(name: any, value: Value): Value {
+    this.globals.set(name, value)
+    return value
   }
 
   setChild(theChild: Environment): void {

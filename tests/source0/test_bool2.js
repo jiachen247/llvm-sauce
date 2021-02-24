@@ -4,4 +4,4 @@ const c = a && !a || !b;
 const d = a && !(a || b);
 display(a, b, c, d);
 
-// 1 0 1 0
+// true false true false

@@ -1,12 +1,25 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
-import { formatWithOptions } from 'util'
 import { Environment, Type, TypeRecord } from '../context/environment'
 
 interface LLVMObjs {
   context: l.LLVMContext
   module: l.Module
   builder: l.IRBuilder
+  trueStr?: l.Value // strings for representation of boolean true, i.e. "true"
+  falseStr?: l.Value // "false"
+}
+
+function isBool(x: l.Value) {
+  return x.type.isIntegerTy() && (x.type as l.IntegerType).getBitWidth() === 1
+}
+
+function isString(x: l.Value) {
+  return x.type.isPointerTy() && x.name.search("str")
+}
+
+function isNumber(x: l.Value) {
+  return x.type.isDoubleTy()
 }
 
 class ProgramExpression {
@@ -61,6 +74,7 @@ class BinaryExpression {
         // Therefore we just assume int implies char. If we get an int array we
         // do concatenation. We can consider a tagged data structure in the
         // future.
+        // TODO IMPLEMENT
         if (
           left.type.isPointerTy() &&
           right.type.isPointerTy() &&
@@ -140,7 +154,7 @@ class CallExpression {
     // TODO: This does not allow for expressions as args.
     const args = node.arguments.map(x => evaluate({ node: x, env, lObj }))
     const builtins: { [id: string]: () => l.CallInst } = {
-      display: () => CallExpression.display(args, lObj)
+      display: () => CallExpression.display(args, env, lObj)
     }
     const built = builtins[callee]
     let fun
@@ -154,14 +168,28 @@ class CallExpression {
   }
 
   // Prints number or strings. Vararg.
-  static display(args: l.Value[], lObj: LLVMObjs) {
-    const fmt = args.map(x =>
-      x.type.isDoubleTy()
-      ? "%f"
-      : x.type.isIntegerTy()  // booleans TODO: Add instruction to convert this to str
-      ? "%d"
-      : "%s").join(" ")
-    const fmtptr = lObj.builder.createGlobalStringPtr(fmt, "format")
+  static display(args: l.Value[], env: Environment, lObj: LLVMObjs) {
+    function boolConv(x: l.Value): l.Value {
+      // We have to do some funky business here to convert bools (0 and 1) to strings.
+      // We store the strings as globals. This should be the only code to ever
+      // touch these two values so this will be fine for now.
+      const tConstName = 'TRUE'
+      const fConstName = 'FALSE'
+      let t = env.getGlobal(tConstName)
+      if (t === undefined) {
+        t = env.addGlobal(tConstName, lObj.builder.createGlobalStringPtr('true', 'true'))
+      }
+      let f = env.getGlobal(fConstName)
+      if (f === undefined) {
+        f = env.addGlobal(fConstName, lObj.builder.createGlobalStringPtr('false', 'false'))
+      }
+      return lObj.builder.createSelect(x, t, f, 'booltostr')
+    }
+    const fmt = args.map(x => (isNumber(x) ? '%f' : '%s')).join(' ')
+    args = args.map(x =>
+      isBool(x) ? boolConv(x) : x
+    )
+    const fmtptr = lObj.builder.createGlobalStringPtr(fmt, 'format')
     const argstype = [l.Type.getInt8PtrTy(lObj.context)]
     const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, true)
     const fun = lObj.module.getOrInsertFunction('printf', funtype)
@@ -177,17 +205,21 @@ class VariableDeclarationExpression {
     const id = decl.id
     const init = decl.init
     let name: string | undefined
-    let value: any
+    let value: l.Value
     if (id.type === 'Identifier') name = id.name
     if (init) {
       value = evaluate({ node: init, env, lObj })
-    }
-    if (value === undefined || !name) {
+    } else {
       throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
     }
+    if (!name) {
+      throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
+    }
+    console.log(value.type)
+    let type: Type = isNumber(value) ? Type.NUMBER : isBool(value) ? Type.BOOLEAN : isString(value) ? Type.STRING : Type.UNKNOWN
     let allocInst = builder.createAlloca(value.type, undefined, name)
-    let storeInst = builder.createStore(value, allocInst, false)
-    env.push(name, { value: allocInst })
+    builder.createStore(value, allocInst, false)
+    env.push(name, { value: allocInst, type })
     return allocInst
   }
 }
@@ -229,7 +261,7 @@ function eval_toplevel(node: es.Node) {
   const context = new l.LLVMContext()
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
-  const env = new Environment(new Map<string, TypeRecord>(), undefined)
+  const env = new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
   evaluate({ node, env, lObj: { context, module, builder } })
   return module
 }
