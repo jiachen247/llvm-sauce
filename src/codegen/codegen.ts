@@ -155,7 +155,12 @@ class CallExpression {
 
   // Prints number or strings. Vararg.
   static display(args: l.Value[], lObj: LLVMObjs) {
-    const fmt = args.map(x => x.type.isDoubleTy() ? "%f" : "%s").join(" ")
+    const fmt = args.map(x =>
+      x.type.isDoubleTy()
+      ? "%f"
+      : x.type.isIntegerTy()  // booleans TODO: Add instruction to convert this to str
+      ? "%d"
+      : "%s").join(" ")
     const fmtptr = lObj.builder.createGlobalStringPtr(fmt, "format")
     const argstype = [l.Type.getInt8PtrTy(lObj.context)]
     const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, true)
