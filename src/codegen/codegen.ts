@@ -5,24 +5,46 @@ import { isBool, isNumber, isString } from '../util/util'
 import { LLVMObjs } from '../types/types'
 import { display } from './primitives'
 
-function evalProgramExpression(node: es.Program, env: Environment, lObj: LLVMObjs): l.Value {
-  const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
-  const mainFun = l.Function.create(
-    voidFunType,
+// Standard setup for a function definition.
+// 1. Sets up hoist block
+// 2. Sets up entry block
+function functionSetup(funtype: l.FunctionType, name: string, lObj: LLVMObjs) : l.Function {
+  const fun = l.Function.create(
+    funtype,
     l.LinkageTypes.ExternalLinkage,
     'main',
     lObj.module
   )
-  const entry = l.BasicBlock.create(lObj.context, 'entry', mainFun)
+  // The hoist block is used to hoist alloca to the top.
+  const hoist = l.BasicBlock.create(lObj.context, 'hoist', fun)
+  const entry = l.BasicBlock.create(lObj.context, 'entry', fun)
   lObj.builder.setInsertionPoint(entry)
-  node.body.map(x => evaluate(x, env, lObj))
+  return fun;
+}
+
+// Standard teardown for a function definition.
+// 1. Creates unconditional branch from hoist to next block.
+// 2. Adds return instruction on last block.
+function functionTeardown(fun: l.Function, lObj: LLVMObjs) : void {
+  let bbs = fun.getBasicBlocks();
+  lObj.builder.setInsertionPoint(bbs[0])
+  lObj.builder.createBr(bbs[1])
+  lObj.builder.setInsertionPoint(bbs[bbs.length - 1])
   lObj.builder.createRetVoid()
   try {
-    l.verifyFunction(mainFun)
+    l.verifyFunction(fun)
   } catch (e) {
     console.error(lObj.module.print())
     throw e
   }
+}
+
+// Sets up the environment. This is only called once at the start.
+function evalProgramExpression(node: es.Program, env: Environment, lObj: LLVMObjs): l.Value {
+  const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
+  const mainFun = functionSetup(voidFunType, "main", lObj)
+  node.body.map(x => evaluate(x, env, lObj))
+  functionTeardown(mainFun, lObj)
   return mainFun
 }
 
@@ -154,7 +176,6 @@ function evalVariableDeclarationExpression(
 ): l.Value {
   const kind = node.kind
   if (kind !== 'const') throw new Error('We can only do const right now')
-  const builder = lObj.builder
   const decl = node.declarations[0]
   const id = decl.id
   const init = decl.init
@@ -169,16 +190,22 @@ function evalVariableDeclarationExpression(
   if (!name) {
     throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
   }
-  console.log(value.type)
-  let type: Type = isNumber(value)
+  let type: Type =
+    isNumber(value)
     ? Type.NUMBER
     : isBool(value)
     ? Type.BOOLEAN
     : isString(value)
     ? Type.STRING
     : Type.UNKNOWN
-  let allocInst = builder.createAlloca(value.type, undefined, name)
-  builder.createStore(value, allocInst, false)
+
+  // Nothing can possibly go wrong, really
+  let insertblock: l.BasicBlock = lObj.builder.getInsertBlock() as l.BasicBlock
+  let thefunction : l.Function = (insertblock.parent as l.Function)
+  lObj.builder.setInsertionPoint(thefunction.getBasicBlocks()[0])
+  let allocInst = lObj.builder.createAlloca(value.type, undefined, name)
+  lObj.builder.setInsertionPoint(insertblock)
+  lObj.builder.createStore(value, allocInst, false)
   env.push(name, { value: allocInst, type })
   return allocInst
 }
