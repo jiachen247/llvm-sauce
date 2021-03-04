@@ -26,4 +26,6 @@ for i in ./tests/source?/test*.js; do
     fi
     rm $tmp
 done
+
+report
 # find ./tests/ -name "test*.js" | xargs -l yarn node dist/index.js
