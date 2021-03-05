@@ -14,7 +14,7 @@ export class CompileError extends Error {
 function main() {
   const opt = require('node-getopt')
     .create([
-      ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '1'],
+      ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '4'],
       ['o', 'output=FILE', 'writes LLVM bytecode to a file, otherwise we print to stdout'],
       ['p', 'pretty', 'enable printing the parsed JSON'],
       ['h', 'help', 'print this help']
@@ -51,9 +51,8 @@ function compile(options: any, code: string) {
   } else {
     console.log(module.print())
   }
-
   // compile should return LLVM IR
-  return Promise.resolve(es_str)
+  return Promise.resolve(module.print())
 }
 
 main()

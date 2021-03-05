@@ -1,4 +1,5 @@
-import { Value } from 'llvm-node'
+import { Value, BasicBlock } from 'llvm-node'
+
 enum Type {
   ARRAY,
   BOOLEAN,
@@ -17,11 +18,12 @@ interface TypeRecord {
 
 class Environment {
   private names: Map<string, TypeRecord>
-  private globals: Map<any, Value>
+  private globals?: Map<any, Value>
   private child?: Environment
-  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
+  private parent?: Environment
+  constructor(theNames: Map<string, TypeRecord>, theGlobals?: Map<any, Value>) {
     this.names = theNames
-    this.globals = theGlobals
+    this.globals = theGlobals ? theGlobals : undefined
   }
 
   push(name: string, tr: TypeRecord): void {
@@ -29,11 +31,18 @@ class Environment {
   }
 
   get(name: string): TypeRecord | undefined {
-    return this.names.get(name)
+    let v = this.names.get(name)
+    if (!v) {
+      if (this.parent) {
+        return this.parent.get(name)
+      }
+      return undefined
+    }
+    return v;
   }
 
   getGlobal(name: any): Value | undefined {
-    return this.globals.get(name)
+    return this.globals?.get(name)
   }
 
   add(name: string, value: TypeRecord): TypeRecord {
@@ -42,12 +51,21 @@ class Environment {
   }
 
   addGlobal(name: any, value: Value): Value {
-    this.globals.set(name, value)
+    this.globals?.set(name, value)
     return value
   }
 
+  // Sets the child of this to point to the argument.
+  // Also sets the parent of the argument to this.
   setChild(theChild: Environment): void {
     this.child = theChild
+    theChild.setParent(this)
+  }
+
+  // Sets the parent of this to point to the argument.
+  // Does not set the child of the argument.
+  setParent(theParent: Environment): void {
+    this.parent = theParent
   }
 }
 
