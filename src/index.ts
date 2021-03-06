@@ -55,4 +55,3 @@ function compile(options: any, code: string) {
 }
 
 main()
-

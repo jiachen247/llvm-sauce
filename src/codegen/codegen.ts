@@ -65,7 +65,7 @@ function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLV
   // TODO: This does not allow for expressions as args.
   const args = node.arguments.map(x => evaluate(x, env, lObj))
   const builtins = {
-    "display": display
+    display: display
   }
   const built = builtins[callee]
   let fun
@@ -79,7 +79,11 @@ function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLV
   }
 }
 
-function evalFunctionDeclaration(node: es.FunctionDeclaration, env: Environment, lObj: LLVMObjs): l.Value {
+function evalFunctionDeclaration(
+  node: es.FunctionDeclaration,
+  env: Environment,
+  lObj: LLVMObjs
+): l.Value {
   // Slightly messy due to es overloading Identifier for params and variables.
   // We cannot simply reuse functionHoist
   function evalParams(x: l.Argument, env: Environment, fun: l.Function) {
@@ -92,22 +96,19 @@ function evalFunctionDeclaration(node: es.FunctionDeclaration, env: Environment,
     return allocInst
   }
   const oldBB = lObj.builder.getInsertBlock() as l.BasicBlock
-  let name = node.id?.name;
+  let name = node.id?.name
   const funenv = new Environment(new Map<string, TypeRecord>(), Location.FUNCTION)
   funenv.setParent(env)
   // TODO: type inference
   const paramtypes = node.params.map(x => l.Type.getDoubleTy(lObj.context))
   const funtype = l.FunctionType.get(l.Type.getDoubleTy(lObj.context), paramtypes, false)
 
-  const fun = functionSetup(funtype, name ? name : "anon", lObj)
-  if (name)
-    env.add(name, { value: fun, type: Type.FUNCTION })
-  const params = fun.getArguments().map(
-    (x, i) => {
-      x.name = (node.params[i] as es.Identifier).name
-      return evalParams(x, funenv, fun)
-    }
-  )
+  const fun = functionSetup(funtype, name ? name : 'anon', lObj)
+  if (name) env.add(name, { value: fun, type: Type.FUNCTION })
+  const params = fun.getArguments().map((x, i) => {
+    x.name = (node.params[i] as es.Identifier).name
+    return evalParams(x, funenv, fun)
+  })
   evaluate(node.body, funenv, lObj)
   functionTeardown(fun, lObj, oldBB)
   functionVerify(fun, lObj)
@@ -140,52 +141,20 @@ function evalExpressionStatement(
   return evaluate(expr, env, lObj)
 }
 
-function evalConditionalStatement(node: es.ConditionalExpression, env: Environment, lObj: LLVMObjs): l.Value {
-  const fun = (lObj.builder.getInsertBlock() as l.BasicBlock).parent as l.Function
-  let thenbb = l.BasicBlock.create(lObj.context, 'then', fun)
-  let elsebb = l.BasicBlock.create(lObj.context, 'else')
-  let afterbb = l.BasicBlock.create(lObj.context, 'after_if')
-  let nestedcond = node.alternate?.type === "ConditionalExpression"
-
-  const test = evaluate(node.test, env, lObj)
-  lObj.builder.createCondBr(test, thenbb, elsebb)
-
-  fun.addBasicBlock(thenbb)
-  lObj.builder.setInsertionPoint(thenbb)
-  const conseq = evaluate(node.consequent, env, lObj)
-  lObj.builder.createBr(afterbb)
-  thenbb = lObj.builder.getInsertBlock() as l.BasicBlock
-
-  fun.addBasicBlock(elsebb)
-  lObj.builder.setInsertionPoint(elsebb)
-  const altern = evaluate(node.alternate as es.ConditionalExpression, env, lObj) // slang enforces that this is defined
-  lObj.builder.createBr(afterbb)
-  elsebb = lObj.builder.getInsertBlock() as l.BasicBlock
-
-  fun.addBasicBlock(afterbb)
-  lObj.builder.setInsertionPoint(afterbb)
-
-  let phi = lObj.builder.createPhi(l.Type.getDoubleTy(lObj.context), 2, "iftmp")
-  phi.addIncoming(conseq, thenbb)
-  if (nestedcond) {
-    let bbs = fun.getBasicBlocks()
-    phi.addIncoming(altern, bbs[bbs.length - 2])
-  } else {
-    phi.addIncoming(altern, elsebb)
-  }
-  return phi
-}
-
-function evalIfStatement(node: es.IfStatement | es.ConditionalExpression, env: Environment, lObj: LLVMObjs) {
+function evalIfStatement(
+  node: es.IfStatement | es.ConditionalExpression,
+  env: Environment,
+  lObj: LLVMObjs
+) {
   const fun = (lObj.builder.getInsertBlock() as l.BasicBlock).parent as l.Function
   const thenbb = l.BasicBlock.create(lObj.context, 'then', fun)
   const elsebb = l.BasicBlock.create(lObj.context, 'else')
   const afterbb = l.BasicBlock.create(lObj.context, 'after_if')
-  let thenterminated = false;
-  let elseterminated = false;
-  let isCond = node.type === "ConditionalExpression"
-  let isNested = node.alternate?.type === "IfStatement" ||
-    node.alternate?.type === "ConditionalExpression"
+  let thenterminated = false
+  let elseterminated = false
+  let isCond = node.type === 'ConditionalExpression'
+  let isNested =
+    node.alternate?.type === 'IfStatement' || node.alternate?.type === 'ConditionalExpression'
 
   const test = evaluate(node.test, env, lObj)
   lObj.builder.createCondBr(test, thenbb, elsebb)
@@ -196,20 +165,16 @@ function evalIfStatement(node: es.IfStatement | es.ConditionalExpression, env: E
   if (thenbb.getTerminator())
     // this is in case of return statements
     thenterminated = true
-  else
-    lObj.builder.createBr(afterbb)
+  else lObj.builder.createBr(afterbb)
 
   fun.addBasicBlock(elsebb)
   lObj.builder.setInsertionPoint(elsebb)
   const altern = evaluate(node.alternate as es.BlockStatement, env, lObj) // slang enforces that this is defined
-  if (elsebb.getTerminator())
-    elseterminated = true
-  else
-    lObj.builder.createBr(afterbb)
+  if (elsebb.getTerminator()) elseterminated = true
+  else lObj.builder.createBr(afterbb)
 
-  if (thenterminated && elseterminated)
-    return elsebb.getTerminator()
-  
+  if (thenterminated && elseterminated) return elsebb.getTerminator()
+
   let bbs = fun.getBasicBlocks()
   if (isNested) {
     lObj.builder.createBr(afterbb)
@@ -217,7 +182,7 @@ function evalIfStatement(node: es.IfStatement | es.ConditionalExpression, env: E
   fun.addBasicBlock(afterbb)
   lObj.builder.setInsertionPoint(afterbb)
 
-  let phi = lObj.builder.createPhi(l.Type.getDoubleTy(lObj.context), 2, "iftmp")
+  let phi = lObj.builder.createPhi(l.Type.getDoubleTy(lObj.context), 2, 'iftmp')
   phi.addIncoming(conseq, thenbb)
   if (isNested) {
     phi.addIncoming(altern, bbs[bbs.length - 1])
@@ -352,8 +317,8 @@ function evalVariableDeclarationExpression(
 
   const allocInst =
     env.loc === Location.FUNCTION
-    ? functionHoist(value, lObj)
-    : lObj.builder.createAlloca(value.type, undefined, name)
+      ? functionHoist(value, lObj)
+      : lObj.builder.createAlloca(value.type, undefined, name)
   lObj.builder.createStore(value, allocInst, false)
   env.push(name, { value: allocInst, type })
   return allocInst
@@ -389,7 +354,11 @@ function eval_toplevel(node: es.Node) {
   const context = new l.LLVMContext()
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
-  const env = new Environment(new Map<string, TypeRecord>(), Location.FUNCTION, new Map<any, l.Value>())
+  const env = new Environment(
+    new Map<string, TypeRecord>(),
+    Location.FUNCTION,
+    new Map<any, l.Value>()
+  )
   evaluate(node, env, { context, module, builder })
   l.verifyModule(module)
   return module

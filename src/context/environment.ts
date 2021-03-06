@@ -14,7 +14,7 @@ enum Location {
   FUNCTION
 }
 
-interface TypeRecord {
+interface Record {
   value: Value
   type?: Type
   // For functions, this records the function signature. [A, B] means sig of A => B.
@@ -22,21 +22,21 @@ interface TypeRecord {
 }
 
 class Environment {
-  private names: Map<string, TypeRecord>
+  private names: Map<string, Record>
   private globals?: Map<any, Value>
   public loc: Location
   private parent?: Environment
-  constructor(theNames: Map<string, TypeRecord>, theLoc: Location, theGlobals?: Map<any, Value>) {
+  constructor(theNames: Map<string, Record>, theLoc: Location, theGlobals?: Map<any, Value>) {
     this.names = theNames
     this.loc = theLoc
     this.globals = theGlobals ? theGlobals : undefined
   }
 
-  push(name: string, tr: TypeRecord): void {
+  push(name: string, tr: Record): void {
     this.names.set(name, tr)
   }
 
-  get(name: string): TypeRecord | undefined {
+  get(name: string): Record | undefined {
     let v = this.names.get(name)
     if (!v) {
       if (this.parent) {
@@ -44,14 +44,14 @@ class Environment {
       }
       return undefined
     }
-    return v;
+    return v
   }
 
   getGlobal(name: any): Value | undefined {
     return this.globals?.get(name)
   }
 
-  add(name: string, value: TypeRecord): TypeRecord {
+  add(name: string, value: Record): Record {
     this.names.set(name, value)
     return value
   }
@@ -68,4 +68,4 @@ class Environment {
   }
 }
 
-export { Environment, Location, Type, TypeRecord }
+export { Environment, Location, Type, Record as TypeRecord }
