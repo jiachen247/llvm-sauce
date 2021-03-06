@@ -1,12 +1,11 @@
 const a = 3;
 if(a < 2) {
-    const b = 1 + 1;
-    display(b);
-} else if (a === 3){
-    display("boo");
+    display(1);
+    1; // this is necessary since we need to evaluate to something and we
+    // haven't implemented proper types yet.
 } else {
-    const b = 1 + 2;
-    display(b);
+    display(2);
+    1;
 }
 
-// boo
+// 2.000000

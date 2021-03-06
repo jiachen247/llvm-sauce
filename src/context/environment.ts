@@ -1,4 +1,5 @@
-import { Value } from 'llvm-node'
+import { Value, BasicBlock } from 'llvm-node'
+
 enum Type {
   ARRAY,
   BOOLEAN,
@@ -6,6 +7,11 @@ enum Type {
   NUMBER,
   STRING,
   UNKNOWN
+}
+
+enum Location {
+  BLOCK,
+  FUNCTION
 }
 
 interface TypeRecord {
@@ -17,11 +23,13 @@ interface TypeRecord {
 
 class Environment {
   private names: Map<string, TypeRecord>
-  private globals: Map<any, Value>
-  private child?: Environment
-  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
+  private globals?: Map<any, Value>
+  public loc: Location
+  private parent?: Environment
+  constructor(theNames: Map<string, TypeRecord>, theLoc: Location, theGlobals?: Map<any, Value>) {
     this.names = theNames
-    this.globals = theGlobals
+    this.loc = theLoc
+    this.globals = theGlobals ? theGlobals : undefined
   }
 
   push(name: string, tr: TypeRecord): void {
@@ -29,11 +37,18 @@ class Environment {
   }
 
   get(name: string): TypeRecord | undefined {
-    return this.names.get(name)
+    let v = this.names.get(name)
+    if (!v) {
+      if (this.parent) {
+        return this.parent.get(name)
+      }
+      return undefined
+    }
+    return v;
   }
 
   getGlobal(name: any): Value | undefined {
-    return this.globals.get(name)
+    return this.globals?.get(name)
   }
 
   add(name: string, value: TypeRecord): TypeRecord {
@@ -42,13 +57,15 @@ class Environment {
   }
 
   addGlobal(name: any, value: Value): Value {
-    this.globals.set(name, value)
+    this.globals?.set(name, value)
     return value
   }
 
-  setChild(theChild: Environment): void {
-    this.child = theChild
+  // Sets the parent of this to be to the argument.
+  // An environment can be the parent of multiple others.
+  setParent(theParent: Environment): void {
+    this.parent = theParent
   }
 }
 
-export { Environment, Type, TypeRecord }
+export { Environment, Location, Type, TypeRecord }
