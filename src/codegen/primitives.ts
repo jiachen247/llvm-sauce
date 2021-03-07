@@ -26,10 +26,21 @@ function display(args: l.Value[], env: Environment, lObj: LLVMObjs) {
   const fmt = args.map(x => (isNumber(x) ? '%f' : '%s')).join(' ')
   args = args.map(x => (isBool(x) ? boolConv(x) : x))
   const fmtptr = lObj.builder.createGlobalStringPtr(fmt, 'format')
-  const argstype = [l.Type.getInt8PtrTy(lObj.context)]
-  const funtype = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), argstype, true)
+  const funtype = l.FunctionType.get(
+    l.Type.getInt32Ty(lObj.context),
+    [l.Type.getInt8PtrTy(lObj.context)],
+    true)
   const fun = lObj.module.getOrInsertFunction('printf', funtype)
   return lObj.builder.createCall(fun.functionType, fun.callee, [fmtptr].concat(args))
 }
 
-export { display }
+function malloc(args: l.Value[], env: Environment, lObj: LLVMObjs) {
+  const funtype = l.FunctionType.get(
+    l.Type.getInt32PtrTy(lObj.context),
+    [l.Type.getInt32Ty(lObj.context)],
+    false)
+  const fun = lObj.module.getOrInsertFunction('malloc', funtype)
+  return lObj.builder.createCall(fun.functionType, fun.callee, args)
+}
+
+export { display, malloc }

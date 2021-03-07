@@ -1,9 +1,9 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
-import { Environment, Location, Type, TypeRecord } from '../context/environment'
-import { isBool, isNumber, isString } from '../util/util'
+import { Environment, Location, Type, Record } from '../context/environment'
+import { getType, getLLVMType } from '../util/util'
 import { LLVMObjs } from '../types/types'
-import { display } from './primitives'
+import { display, malloc } from './primitives'
 
 // Standard setup for a function definition.
 // 1. Sets up hoist block
@@ -65,7 +65,8 @@ function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLV
   // TODO: This does not allow for expressions as args.
   const args = node.arguments.map(x => evaluate(x, env, lObj))
   const builtins = {
-    display: display
+    display: display,
+    malloc: malloc
   }
   const built = builtins[callee]
   let fun
@@ -84,32 +85,101 @@ function evalFunctionDeclaration(
   env: Environment,
   lObj: LLVMObjs
 ): l.Value {
-  // Slightly messy due to es overloading Identifier for params and variables.
-  // We cannot simply reuse functionHoist
-  function evalParams(x: l.Argument, env: Environment, fun: l.Function) {
-    lObj.builder.setInsertionPoint(fun.getBasicBlocks()[0])
-    let allocInst = lObj.builder.createAlloca(x.type, undefined, x.name)
-    // TODO: Add a proper type
-    env.add(x.name, { value: allocInst, type: Type.UNKNOWN })
+  // Loads names defined in the context to memory. This context is inherited
+  // from the parent.
+  function loadParentContext(env: Environment, fun: l.Function) {
+
+    if (!env.context)
+      return
+    // this is needed to get around the TS type checker for some reason
+    const context = env.context
+
+    const names = env.findAllParentsNames()
     lObj.builder.setInsertionPoint(fun.getBasicBlocks()[1])
-    lObj.builder.createStore(x, allocInst)
-    return allocInst
+    let i = 0
+    console.log(names)
+    names.forEach((r, k) => {
+      console.log(r)
+      const ptr = lObj.builder.createInBoundsGEP(
+        context,
+        [
+          l.ConstantInt.get(lObj.context, 0),
+          l.ConstantInt.get(lObj.context, i)
+        ]
+      )
+      env.add(k, { value: ptr, type: r.type })
+      i++
+    });
   }
+  // Creates a context (environment frame) using the params and variables in the
+  // function body
+  // TODO: add a scan for variable declarations in the body!
+  function createContext(env: Environment, fun: l.Function, params: l.Argument[]) {
+    const types : l.Type[] = []
+    params.forEach(x => {
+      if (!env.get(x.name))
+        env.add(x.name, { value: x, type: getType(x) })
+    })
+    env.names.forEach((tr: Record, key: string) => {
+      // TODO: add type inference
+      types.push(getLLVMType(Type.NUMBER, lObj.context))
+    })
+
+    lObj.builder.setInsertionPoint(fun.getBasicBlocks()[0])
+    const structType = l.StructType.create(lObj.context, "context")
+    types.push(structType)
+    structType.setBody(types)
+    const structPtrType = structType.getPointerTo()
+
+    // these do: structtype* structptr = (structtype *) malloc(sizeof structtype)
+    const ssize = lObj.module.dataLayout.getTypeStoreSize(structType)
+    let structptr : l.Value = malloc([l.ConstantInt.get(lObj.context, ssize)], env, lObj)
+    structptr = lObj.builder.createBitCast(structptr, structPtrType, "contextptr")
+
+    let i = 0
+    // these do: entrytype* ptr = structptr->entry, i.e structptr[0][entry]
+    env.names.forEach((tr: Record, key: string) => {
+      const ptr = lObj.builder.createInBoundsGEP(
+        structptr,
+        [
+          l.ConstantInt.get(lObj.context, 0),
+          l.ConstantInt.get(lObj.context, i)
+        ],
+        tr.value.name)
+      env.add(key, { value: ptr, type: tr.type, funSig: tr.funSig })
+      i++
+    })
+
+    params.forEach(x => {
+      lObj.builder.setInsertionPoint(fun.getBasicBlocks()[1])
+      const v = env.get(x.name)
+      if (v)
+        lObj.builder.createStore(x, v.value)
+    })
+    return structptr
+  }
+
   const oldBB = lObj.builder.getInsertBlock() as l.BasicBlock
   let name = node.id?.name
-  const funenv = new Environment(new Map<string, TypeRecord>(), Location.FUNCTION)
-  funenv.setParent(env)
+  const funenv = env.createChild(Location.FUNCTION)
   // TODO: type inference
   const paramtypes = node.params.map(x => l.Type.getDoubleTy(lObj.context))
   const funtype = l.FunctionType.get(l.Type.getDoubleTy(lObj.context), paramtypes, false)
 
   const fun = functionSetup(funtype, name ? name : 'anon', lObj)
+
   if (name) env.add(name, { value: fun, type: Type.FUNCTION })
   const params = fun.getArguments().map((x, i) => {
     x.name = (node.params[i] as es.Identifier).name
-    return evalParams(x, funenv, fun)
+    return x
+    // return evalParams(x, funenv, fun)
   })
+  //funenv.context = createContext(funenv, fun, params)
+  //loadParentContext(funenv, fun)
+
+  lObj.builder.setInsertionPoint(fun.getBasicBlocks()[1])
   evaluate(node.body, funenv, lObj)
+
   functionTeardown(fun, lObj, oldBB)
   functionVerify(fun, lObj)
   return fun
@@ -126,9 +196,7 @@ function evalReturnStatement(node: es.ReturnStatement, env: Environment, lObj: L
 
 function evalBlockStatement(node: es.BlockStatement, env: Environment, lObj: LLVMObjs) {
   // TODO: Check for return statements
-  let blenv = new Environment(new Map<string, TypeRecord>(), Location.BLOCK)
-  blenv.setParent(env)
-  let v = node.body.map(x => evaluate(x, blenv, lObj))
+  let v = node.body.map(x => evaluate(x, env, lObj))
   return v[node.body.length - 1]
 }
 
@@ -152,18 +220,20 @@ function evalIfStatement(
   const afterbb = l.BasicBlock.create(lObj.context, 'after_if')
   let thenterminated = false
   let elseterminated = false
-  let isCond = node.type === 'ConditionalExpression'
-  let isNested =
+  // This means there is some kind of else if structure and the phi nodes need
+  // to be redirected later on
+  let elif =
     node.alternate?.type === 'IfStatement' || node.alternate?.type === 'ConditionalExpression'
 
+  // TODO: add new environment
   const test = evaluate(node.test, env, lObj)
   lObj.builder.createCondBr(test, thenbb, elsebb)
 
   fun.addBasicBlock(thenbb)
   lObj.builder.setInsertionPoint(thenbb)
   const conseq = evaluate(node.consequent, env, lObj)
+  // this is in case of return statements
   if (thenbb.getTerminator())
-    // this is in case of return statements
     thenterminated = true
   else lObj.builder.createBr(afterbb)
 
@@ -176,19 +246,17 @@ function evalIfStatement(
   if (thenterminated && elseterminated) return elsebb.getTerminator()
 
   let bbs = fun.getBasicBlocks()
-  if (isNested) {
-    lObj.builder.createBr(afterbb)
-  }
+  if (elif) lObj.builder.createBr(afterbb)
   fun.addBasicBlock(afterbb)
   lObj.builder.setInsertionPoint(afterbb)
 
   let phi = lObj.builder.createPhi(l.Type.getDoubleTy(lObj.context), 2, 'iftmp')
   phi.addIncoming(conseq, thenbb)
-  if (isNested) {
-    phi.addIncoming(altern, bbs[bbs.length - 1])
-  } else {
-    phi.addIncoming(altern, elsebb)
-  }
+  // If there is elif structure we have to direct the answer of else to the phi
+  // of the phi node of the parent if block
+  if (elif) phi.addIncoming(altern, bbs[bbs.length - 1])
+  else phi.addIncoming(altern, elsebb)
+
   return phi
 }
 
@@ -307,20 +375,12 @@ function evalVariableDeclarationExpression(
   if (!name) {
     throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
   }
-  let type: Type = isNumber(value)
-    ? Type.NUMBER
-    : isBool(value)
-    ? Type.BOOLEAN
-    : isString(value)
-    ? Type.STRING
-    : Type.UNKNOWN
-
   const allocInst =
     env.loc === Location.FUNCTION
       ? functionHoist(value, lObj)
       : lObj.builder.createAlloca(value.type, undefined, name)
   lObj.builder.createStore(value, allocInst, false)
-  env.push(name, { value: allocInst, type })
+  env.push(name, { value: allocInst, type: getType(value) })
   return allocInst
 }
 
@@ -355,9 +415,9 @@ function eval_toplevel(node: es.Node) {
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
   const env = new Environment(
-    new Map<string, TypeRecord>(),
+    new Map<string, Record>(),
     Location.FUNCTION,
-    new Map<any, l.Value>()
+    undefined
   )
   evaluate(node, env, { context, module, builder })
   l.verifyModule(module)
