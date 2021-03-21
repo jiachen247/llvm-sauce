@@ -11,9 +11,9 @@ enum Type {
 }
 
 interface TypeRecord {
-  offset: number,
-  value?: Value,
-  type?: Type,
+  offset: number
+  value?: Value
+  type?: Type
   // For functions, this records the function signature. [A, B] means sig of A => B.
   funSig?: [Type[], Type[]]
 }
@@ -77,7 +77,7 @@ class Environment {
     this.parent = theParent
   }
 
-  getFrame(){
+  getFrame() {
     return this.frame
   }
 
