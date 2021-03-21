@@ -1,4 +1,6 @@
 import { Value } from 'llvm-node'
+import * as l from 'llvm-node'
+
 enum Type {
   ARRAY,
   BOOLEAN,
@@ -9,8 +11,9 @@ enum Type {
 }
 
 interface TypeRecord {
-  value: Value
-  type?: Type
+  offset: number,
+  value?: Value,
+  type?: Type,
   // For functions, this records the function signature. [A, B] means sig of A => B.
   funSig?: [Type[], Type[]]
 }
@@ -18,10 +21,30 @@ interface TypeRecord {
 class Environment {
   private names: Map<string, TypeRecord>
   private globals: Map<any, Value>
-  private child?: Environment
-  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
+  private parent?: Environment
+  private frame?: Value
+  constructor(
+    theNames: Map<string, TypeRecord>,
+    theOffsets: Map<string, number>,
+    theGlobals: Map<any, Value>
+  ) {
     this.names = theNames
     this.globals = theGlobals
+  }
+
+  static createNewEnvironment(parent: Environment) {
+    return new Environment(
+      new Map<string, TypeRecord>(),
+      new Map<string, number>(),
+      new Map<any, l.Value>()
+    )
+  }
+
+  addRecord(name: string, offset: number) {
+    const record: TypeRecord = {
+      offset: offset
+    }
+    this.push(name, record)
   }
 
   push(name: string, tr: TypeRecord): void {
@@ -32,11 +55,15 @@ class Environment {
     return this.names.get(name)
   }
 
+  getOffset(name: string): number | undefined {
+    return this.names.get(name)!.offset
+  }
+
   getGlobal(name: any): Value | undefined {
     return this.globals.get(name)
   }
 
-  add(name: string, value: TypeRecord): TypeRecord {
+  addType(name: string, value: TypeRecord): TypeRecord {
     this.names.set(name, value)
     return value
   }
@@ -46,8 +73,16 @@ class Environment {
     return value
   }
 
-  setChild(theChild: Environment): void {
-    this.child = theChild
+  setParent(theParent: Environment): void {
+    this.parent = theParent
+  }
+
+  getFrame(){
+    return this.frame
+  }
+
+  setFrame(value: l.Value) {
+    this.frame = value
   }
 }
 

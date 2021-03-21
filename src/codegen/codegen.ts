@@ -4,6 +4,25 @@ import { Environment, Type, TypeRecord } from '../context/environment'
 import { isBool, isNumber, isString } from '../util/util'
 import { LLVMObjs } from '../types/types'
 import { display } from './primitives'
+import { assignmentExpression, cloneWithoutLoc, objectExpression, recordExpression, VariableDeclaration, VariableDeclarator } from '@babel/types'
+import { endianness } from 'node:os'
+import { env } from 'yargs'
+
+
+let NUMBER_CODE : l.Value, BOOLEAN_CODE : l.Value, STRING_CODE : l.Value;
+
+function malloc(size: number, lObj: LLVMObjs, name?: string) {
+  const sizeValue = l.ConstantInt.get(lObj.context, size, 64)
+
+  const mallocFunType = l.FunctionType.get(l.Type.getInt8PtrTy(lObj.context), [l.Type.getInt64Ty(lObj.context)], false)
+  const mallocFun = lObj.module.getOrInsertFunction("malloc", mallocFunType);
+
+  return lObj.builder.createCall(
+    mallocFun.functionType,
+    mallocFun.callee, 
+    [sizeValue], 
+    name)
+}
 
 // Standard setup for a function definition.
 // 1. Sets up hoist block
@@ -39,10 +58,40 @@ function functionTeardown(fun: l.Function, lObj: LLVMObjs) : void {
   }
 }
 
+function scanOutDir(nodes: Array<es.Node>, env: Environment) : number {
+  let count = 0;
+
+  for (let node of nodes) {
+      if (node.type === "VariableDeclaration") {
+        count += 1;
+        const decl = (node as es.VariableDeclaration).declarations[0]
+        const id = decl.id
+        let name: string | undefined
+        if (id.type === 'Identifier') name = id.name
+
+        env.addRecord(name!, count);
+      }
+  }
+  return count;
+}
+
+function createEnv(count: number, lObj: LLVMObjs) : l.Value {
+    const size = (count + 1) * 8 // 64 bit
+    return malloc(size, lObj, "env")
+}
+
 // Sets up the environment. This is only called once at the start.
-function evalProgramExpression(node: es.Program, env: Environment, lObj: LLVMObjs): l.Value {
+function evalProgramExpression(node: es.Program, parent: Environment, lObj: LLVMObjs): l.Value {
   const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
   const mainFun = functionSetup(voidFunType, "main", lObj)
+
+  const env = Environment.createNewEnvironment(parent);
+  const environmentSize = scanOutDir(node.body, env);
+  const envValue = createEnv(environmentSize, lObj);
+
+  env.setParent(parent)
+  env.setFrame(envValue)
+
   node.body.map(x => evaluate(x, env, lObj))
   functionTeardown(mainFun, lObj)
   return mainFun
@@ -50,7 +99,7 @@ function evalProgramExpression(node: es.Program, env: Environment, lObj: LLVMObj
 
 function evalIdentifierExpression(node: es.Identifier, env: Environment, lObj: LLVMObjs): l.Value {
   const v = env.get(node.name)
-  if (v) return lObj.builder.createLoad(v.value)
+  if (v) return lObj.builder.createLoad(v.value!) // !!
   else throw new Error('Cannot find name ' + node.name)
 }
 
@@ -131,8 +180,22 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
   }
 }
 
+
+/*
+Literal
+-----------------
+| double: value |
+| double: type  |
+-----------------
+*/
 function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObjs): l.Value {
   let value = node.value
+  // malloc 16 bytes
+  // write type to offset 0
+  // wirte data to offset 16
+
+  const block : l.Value = malloc(16, lObj)
+
   switch (typeof value) {
     case 'string':
       return lObj.builder.createGlobalStringPtr(value, 'str')
@@ -143,12 +206,25 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
         return l.ConstantArray.get(arrayType, elements)
         */
     case 'number':
-      return l.ConstantFP.get(lObj.context, value)
+      const actual = l.ConstantFP.get(lObj.context, value)
+      const cast = lObj.builder.createBitCast(block, l.Type.getDoublePtrTy(lObj.context))
+      lObj.builder.createStore(actual, cast, false)
+      const typePtr = lObj.builder.createInBoundsGEP(cast, [l.ConstantInt.get(lObj.context, 1)])
+      lObj.builder.createStore(NUMBER_CODE, typePtr, false)
+      return cast
     case 'boolean':
-      return value ? l.ConstantInt.getTrue(lObj.context) : l.ConstantInt.getFalse(lObj.context)
+      // return value ? l.ConstantInt.getTrue(lObj.context) : l.ConstantInt.getFalse(lObj.context)
+      const bool = value ? l.ConstantInt.getTrue(lObj.context) : l.ConstantInt.getFalse(lObj.context)
+      const boolCast = lObj.builder.createBitCast(block, l.Type.getDoublePtrTy(lObj.context))
+      lObj.builder.createStore(bool, boolCast, false)
+      const boolType = lObj.builder.createInBoundsGEP(boolCast, [l.ConstantInt.get(lObj.context, 1)])
+      lObj.builder.createStore(BOOLEAN_CODE, boolType, false)
+      return boolCast
     default:
       throw new Error('Unimplemented literal type ' + typeof value)
+
   }
+  return block
 }
 
 function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
@@ -190,24 +266,27 @@ function evalVariableDeclarationExpression(
   if (!name) {
     throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
   }
-  let type: Type =
-    isNumber(value)
-    ? Type.NUMBER
-    : isBool(value)
-    ? Type.BOOLEAN
-    : isString(value)
-    ? Type.STRING
-    : Type.UNKNOWN
+  // let type: Type =
+  //   isNumber(value)
+  //   ? Type.NUMBER
+  //   : isBool(value)
+  //   ? Type.BOOLEAN
+  //   : isString(value)
+  //   ? Type.STRING
+  //   : Type.UNKNOWN
 
   // Nothing can possibly go wrong, really
-  let insertblock: l.BasicBlock = lObj.builder.getInsertBlock() as l.BasicBlock
-  let thefunction : l.Function = (insertblock.parent as l.Function)
-  lObj.builder.setInsertionPoint(thefunction.getBasicBlocks()[0])
-  let allocInst = lObj.builder.createAlloca(value.type, undefined, name)
-  lObj.builder.setInsertionPoint(insertblock)
-  lObj.builder.createStore(value, allocInst, false)
-  env.push(name, { value: allocInst, type })
-  return allocInst
+  // let insertblock: l.BasicBlock = lObj.builder.getInsertBlock() as l.BasicBlock
+  // let thefunction : l.Function = (insertblock.parent as l.Function)
+  // lObj.builder.setInsertionPoint(thefunction.getBasicBlocks()[0])
+  // let allocInst = lObj.builder.createAlloca(value.type, undefined, name)
+  // lObj.builder.setInsertionPoint(insertblock)
+  // lObj.builder.createStore(value, allocInst, false)
+  // env.push(name, { offset: 0, value: allocInst, type }) // should not be offset 0
+
+  const record = env.get(name)! // has to exist due to scanoutdir
+  record.value = value;
+  return value
 }
 
 function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
@@ -228,11 +307,30 @@ function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
   throw new Error('Not implemented. ' + JSON.stringify(node))
 }
 
+function build_runtime(context: l.LLVMContext, module: l.Module) {
+  // Delare abi / os functions
+  // malloc - declare i8* @malloc(i64) #1
+  module.getOrInsertFunction(
+    'malloc',
+    l.FunctionType.get(l.Type.getInt8PtrTy(context), [l.Type.getInt64Ty(context)], false)
+  ) 
+}
+
 function eval_toplevel(node: es.Node) {
   const context = new l.LLVMContext()
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
-  const env = new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
+
+  NUMBER_CODE = l.ConstantFP.get(context, 1)
+  BOOLEAN_CODE = l.ConstantFP.get(context, 2)
+  STRING_CODE = l.ConstantFP.get(context, 3)
+
+  build_runtime(context, module)
+  const env = new Environment(
+    new Map<string, TypeRecord>(),
+    new Map<string, number>(),
+    new Map<any, l.Value>()
+  )
   evaluate(node, env, { context, module, builder })
   return module
 }
