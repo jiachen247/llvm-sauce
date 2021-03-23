@@ -26,7 +26,6 @@ function display(args: l.Value[], env: Environment, lObj: LLVMObjs) {
   // const fmt = args.map(x => (isNumber(x) ? '%f' : '%s')).join(' ')
   // args = args.map(x => (isBool(x) ? boolConv(x) : x))
   // const fmtptr = lObj.builder.createGlobalStringPtr(fmt, 'format')
-  
   // return lObj.builder.createCall(fun.functionType, fun.callee, [fmtptr].concat(args))
 }
 

@@ -12,7 +12,8 @@ enum Type {
 
 interface TypeRecord {
   offset: number
-  value?: Value
+  // depreceated
+  // value?: Value
   type?: Type
   // For functions, this records the function signature. [A, B] means sig of A => B.
   funSig?: [Type[], Type[]]
@@ -23,21 +24,14 @@ class Environment {
   private globals: Map<any, Value>
   private parent?: Environment
   private frame?: Value
-  constructor(
-    theNames: Map<string, TypeRecord>,
-    theOffsets: Map<string, number>,
-    theGlobals: Map<any, Value>
-  ) {
+  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
     this.names = theNames
     this.globals = theGlobals
+    this.parent = undefined
   }
 
-  static createNewEnvironment(parent: Environment) {
-    return new Environment(
-      new Map<string, TypeRecord>(),
-      new Map<string, number>(),
-      new Map<any, l.Value>()
-    )
+  static createNewEnvironment() {
+    return new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
   }
 
   addRecord(name: string, offset: number) {
@@ -49,6 +43,10 @@ class Environment {
 
   push(name: string, tr: TypeRecord): void {
     this.names.set(name, tr)
+  }
+
+  contains(name: string): boolean {
+    return this.names.has(name)
   }
 
   get(name: string): TypeRecord | undefined {
@@ -75,6 +73,10 @@ class Environment {
 
   setParent(theParent: Environment): void {
     this.parent = theParent
+  }
+
+  getParent(): Environment | undefined {
+    return this.parent
   }
 
   getFrame() {

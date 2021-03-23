@@ -4,6 +4,7 @@ import { Environment, TypeRecord } from '../context/environment'
 import { buildRuntime } from './runtime'
 import { LLVMObjs } from '../types/types'
 import { BUILDER_KEYS } from '@babel/types'
+import { ensureGlobalEnvironmentExist } from 'js-slang/dist/createContext'
 
 let NUMBER_CODE: l.Value, BOOLEAN_CODE: l.Value, STRING_CODE: l.Value
 
@@ -25,15 +26,19 @@ function display(args: l.Value[], env: Environment, lObj: LLVMObjs): l.CallInst 
   // callee: Value, args: Value[], name?: string
   // const displayFunctionType = l.FunctionType.get(
   //   l.Type.getVoidTy(lObj.context),
-  //   [lObj.module.getTypeByName("literal")!], 
+  //   [lObj.module.getTypeByName("literal")!],
   //   false
   // )
 
-  const displayFunction = lObj.module.getFunction("display")!
+  const displayFunction = lObj.module.getFunction('display')!
   if (args.length < 1) {
-    console.error("display requires one arguement");
+    console.error('display requires one arguement')
   }
-  return lObj.builder.createCall(displayFunction.type.elementType, lObj.module.getFunction("display")!, args);
+  return lObj.builder.createCall(
+    displayFunction.type.elementType,
+    lObj.module.getFunction('display')!,
+    args
+  )
 }
 
 // Standard setup for a function definition.
@@ -83,8 +88,10 @@ function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
 }
 
 function createEnv(count: number, lObj: LLVMObjs): l.Value {
+  // size + 1 for env parent ptr
   const size = (count + 1) * 8 // 64 bit
-  return malloc(size, lObj, 'env')
+  // env registers start with e
+  return malloc(size, lObj, 'e')
 }
 
 // Sets up the environment. This is only called once at the start.
@@ -94,23 +101,64 @@ function evalProgramExpression(node: es.Program, parent: Environment, lObj: LLVM
 
   // can only be declared in a function
 
-  const env = Environment.createNewEnvironment(parent)
-  const environmentSize = scanOutDir(node.body, env)
+  const programEnv = Environment.createNewEnvironment()
+  const environmentSize = scanOutDir(node.body, programEnv)
+
   const envValue = createEnv(environmentSize, lObj)
+  programEnv.setParent(parent)
+  programEnv.setFrame(envValue)
+  
 
-  env.setParent(parent)
-  env.setFrame(envValue)
-
-  node.body.map(x => evaluate(x, env, lObj))
+  node.body.map(x => evaluate(x, programEnv, lObj))
   functionTeardown(mainFun, lObj)
   return mainFun
 }
 
+interface Location {
+  jumps: number
+  offset: number
+}
+
+// jump is the number of back pointers to follow in the env
+function lookup_env(name: string, frame: Environment): Location {
+  let jumps = 0
+  let currentFrame = frame
+
+  while (true) {
+    if (currentFrame.contains(name)) {
+      const offset = currentFrame.get(name)!.offset
+      return { jumps, offset }
+    }
+
+    const parent = currentFrame.getParent()
+    if (!parent) {
+      throw new Error('Cannot find name ' + name)
+    } else {
+      currentFrame = parent
+      jumps += 1
+    }
+  }
+}
+
 function evalIdentifierExpression(node: es.Identifier, env: Environment, lObj: LLVMObjs): l.Value {
-  const v = env.get(node.name)
-  if (v) return lObj.builder.createLoad(v.value!)
-  // !!
-  else throw new Error('Cannot find name ' + node.name)
+  const { jumps, offset } = lookup_env(node.name, env)
+  let frame = env.getFrame()!
+
+  const literalStructType = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStructType, 0)!
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)!
+
+  for (let i = 0; i < jumps; i++) {
+    const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!, "jiachen")
+    frame = lObj.builder.createLoad(tmp)
+  }
+
+  const frameCasted = lObj.builder.createBitCast(frame, literalStructPtrPtr)
+  const addr = lObj.builder.createInBoundsGEP(literalStructPtr, frameCasted, [
+    l.ConstantInt.get(lObj.context, offset)
+  ])
+
+  return lObj.builder.createLoad(addr)
 }
 
 function evalExpressionStatement(
@@ -238,8 +286,8 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
         l.ConstantInt.get(lObj.context, 1)
       ])
 
-      lObj.builder.createStore(actualValue, valuePtr, true)
-      lObj.builder.createStore(NUMBER_CODE, typePtr, true)
+      lObj.builder.createStore(actualValue, valuePtr, false)
+      lObj.builder.createStore(NUMBER_CODE, typePtr, false)
       break
     case 'boolean':
       const boolValue = value
@@ -281,44 +329,57 @@ function evalVariableDeclarationExpression(
   node: es.VariableDeclaration,
   env: Environment,
   lObj: LLVMObjs
-): l.Value {
+) {
   const kind = node.kind
   if (kind !== 'const') throw new Error('We can only do const right now')
   const decl = node.declarations[0]
   const id = decl.id
   const init = decl.init
-  let name: string | undefined
+  let name = (id as es.Identifier).name
   let value: l.Value
-  if (id.type === 'Identifier') name = id.name
-  if (init) {
-    value = evaluate(init, env, lObj)
-  } else {
-    throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
-  }
-  if (!name) {
-    throw new Error('Something wrong with the literal\n' + JSON.stringify(node))
-  }
-  // let type: Type =
-  //   isNumber(value)
-  //   ? Type.NUMBER
-  //   : isBool(value)
-  //   ? Type.BOOLEAN
-  //   : isString(value)
-  //   ? Type.STRING
-  //   : Type.UNKNOWN
 
-  // Nothing can possibly go wrong, really
-  // let insertblock: l.BasicBlock = lObj.builder.getInsertBlock() as l.BasicBlock
-  // let thefunction : l.Function = (insertblock.parent as l.Function)
-  // lObj.builder.setInsertionPoint(thefunction.getBasicBlocks()[0])
-  // let allocInst = lObj.builder.createAlloca(value.type, undefined, name)
-  // lObj.builder.setInsertionPoint(insertblock)
-  // lObj.builder.createStore(value, allocInst, false)
-  // env.push(name, { offset: 0, value: allocInst, type }) // should not be offset 0
+  if (!init) {
+    // in later versions of source `let x;` is allowed
+    throw new Error('Assingment must have a value\n' + JSON.stringify(node))
+  }
 
-  const record = env.get(name)! // has to exist due to scanoutdir
-  record.value = value
-  return value
+  value = evaluate(init, env, lObj)
+  let frame = env.getFrame()!
+
+  // write pointer to value to env frame
+  const literalType = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalType, 0)!
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)!
+
+  const { jumps, offset } = lookup_env(name, env)
+
+  for (let i = 0; i < jumps; i++) {
+    const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!)
+    frame = lObj.builder.createLoad(tmp)
+  }
+
+  const frame_casted = lObj.builder.createBitCast(frame, literalStructPtrPtr)
+  const ptr = lObj.builder.createInBoundsGEP(literalStructPtr, frame_casted, [
+    l.ConstantInt.get(lObj.context, offset)
+  ])
+
+  lObj.builder.createStore(value, ptr, false)
+}
+
+function evalBlockStatement(node: es.Node, parent: Environment, lObj: LLVMObjs) {
+  const body = (node as es.BlockStatement).body
+
+  const env = Environment.createNewEnvironment()
+  const environmentSize = scanOutDir(body, env)
+  const envValue = createEnv(environmentSize, lObj)
+  // store back addr in fist addr
+  const parentAddr = parent.getFrame()!
+  const framePtr = lObj.builder.createBitCast(envValue, l.PointerType.get(parentAddr.type, 0))
+  lObj.builder.createStore(parentAddr, framePtr)
+  env.setParent(parent)
+  env.setFrame(envValue)
+
+  body.map(x => evaluate(x, env, lObj))
 }
 
 function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
@@ -331,7 +392,8 @@ function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
     BinaryExpression: evalBinaryStatement,
     LogicalExpression: evalBinaryStatement,
     Literal: evalLiteralExpression,
-    CallExpression: evalCallExpression
+    CallExpression: evalCallExpression,
+    BlockStatement: evalBlockStatement
   }
   const fun = jumptable[node.type]
   if (fun) return fun(node, env, lObj)
@@ -350,13 +412,9 @@ function eval_toplevel(node: es.Node) {
 
   buildRuntime(context, module, builder)
 
-  const env = new Environment(
-    new Map<string, TypeRecord>(),
-    new Map<string, number>(),
-    new Map<any, l.Value>()
-  )
-  evaluate(node, env, { context, module, builder })
-  
+  const globalEnv = new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
+  evaluate(node, globalEnv, { context, module, builder })
+
   return module
 }
 
