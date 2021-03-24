@@ -281,8 +281,7 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
 
   switch (operator) {
     case '!':
-
-    /*
+      /*
     display(true);
     display(!true);
     display(false);
@@ -291,11 +290,10 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
     node {2.000000, -2.000000}
     node {2.000000, 0.000000}
     node {2.000000, -1.000000}
-
     todo fix this!
     */
       const exprInt = lObj.builder.createFPToSI(exprValue, intType)
-      tmp = lObj.builder.createNot(exprInt) 
+      tmp = lObj.builder.createNot(exprInt)
       value = lObj.builder.createSIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
@@ -346,6 +344,13 @@ function createBooleanLiteral(value: boolean, lObj: LLVMObjs): l.Value {
   return createLiteral(boolValue, BOOLEAN_CODE, lObj)
 }
 
+function createStringLiteral(str: string, lObj: LLVMObjs) {
+  const doubleType = l.Type.getDoubleTy(lObj.context)
+  const strPtr = lObj.builder.createGlobalStringPtr(str, 'str')
+  const strAsDouble = lObj.builder.createPtrToInt(strPtr, doubleType)
+  return createLiteral(strAsDouble, STRING_CODE, lObj)
+}
+
 /*
 literal
 -----------------
@@ -361,24 +366,7 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
 
   switch (typeof value) {
     case 'string':
-      // todo figure string out!!
-
-      // return lObj.builder.createGlobalStringPtr(value, 'str')
-      //   const actualString = lObj.builder.createGlobalStringPtr(value)
-      //   // lObj.builder.create
-      //   // const stringTypePtr = lObj.builder.createBitCast(block, l.Type.getDoublePtrTy(lObj.context))
-      //   const stringValuePtr = lObj.builder.createInBoundsGEP(block, [
-      //     l.ConstantInt.get(lObj.context, 0),
-      //     l.ConstantInt.get(lObj.context, 1)
-      //   ])
-      //   const casted = lObj.builder.createBitCast(stringValuePtr, l.PointerType.get(l.Type.getInt8Ty(lObj.context), 0))
-      //   // const casted = lObj.builder.createBitCast(stringValuePtr, l.PointerType.get(
-      //   //   l.ArrayType.get(l.Type.getInt8Ty(lObj.context), 4), 0)
-      //   // )
-      //   lObj.builder.createStore(actualString, casted, false)
-      //   // lObj.builder.createStore(STRING_CODE, stringTypePtr, false)
-
-      return l.ConstantInt.get(lObj.context, 1)
+      return createStringLiteral(value, lObj)
     case 'number':
       return createNumberLiteral(value, lObj)
     case 'boolean':

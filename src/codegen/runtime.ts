@@ -39,6 +39,11 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
 
   const type = builder.createLoad(typePtr)
   const value = builder.createLoad(valuePtr)
+
+  // for string support later
+  // const strType = l.PointerType.get(l.Type.getInt8Ty(context), 0)
+  // const intType = l.Type.getInt64Ty(context)
+  // const str = builder.createBitCast(value, intType)
   const format = builder.createGlobalString('node {%lf, %lf}\n', 'format_node')
   const formati8 = builder.createBitCast(format, l.Type.getInt8PtrTy(context))
 
