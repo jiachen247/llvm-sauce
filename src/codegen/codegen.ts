@@ -99,8 +99,6 @@ function evalProgramExpression(node: es.Program, parent: Environment, lObj: LLVM
   const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
   const mainFun = functionSetup(voidFunType, 'main', lObj)
 
-  // can only be declared in a function
-
   const programEnv = Environment.createNewEnvironment()
   const environmentSize = scanOutDir(node.body, programEnv)
 

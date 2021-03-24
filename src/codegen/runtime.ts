@@ -1,8 +1,4 @@
-import * as es from 'estree'
 import * as l from 'llvm-node'
-import { Environment, TypeRecord } from '../context/environment'
-import { LLVMObjs } from '../types/types'
-import { display } from './primitives'
 
 function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
   // for now can just print out struct
@@ -19,54 +15,91 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
     'display',
     module
   )
-  const hoist = l.BasicBlock.create(context, 'hoist', fun)
-  const entry = l.BasicBlock.create(context, 'entry', fun)
-  builder.setInsertionPoint(entry)
-  // builder.createFAdd(
-  //   l.ConstantFP.get(context, 1),
-  //   l.ConstantFP.get(context, 1)
-  // )
-  const literal = fun.getArguments()[0]!
-  const typePtr = builder.createInBoundsGEP(literal, [
-    l.ConstantInt.get(context, 0),
-    l.ConstantInt.get(context, 0)
-  ])
-
-  const valuePtr = builder.createInBoundsGEP(literal, [
-    l.ConstantInt.get(context, 0),
-    l.ConstantInt.get(context, 1)
-  ])
-
-  const type = builder.createLoad(typePtr)
-  const value = builder.createLoad(valuePtr)
-
-  // for string support later
-  // const strType = l.PointerType.get(l.Type.getInt8Ty(context), 0)
-  // const intType = l.Type.getInt64Ty(context)
-  // const str = builder.createBitCast(value, intType)
-  const format = builder.createGlobalString('node {%lf, %lf}\n', 'format_node')
-  const formati8 = builder.createBitCast(format, l.Type.getInt8PtrTy(context))
 
   const printfFunctionType = l.FunctionType.get(
     l.Type.getInt32Ty(context),
     [l.Type.getInt8PtrTy(context)],
     true
   )
-  const printf = module.getOrInsertFunction('printf', printfFunctionType)
-  builder.createCall(printf.functionType, printf.callee, [formati8, type, value])
 
-  let bbs = fun.getBasicBlocks()
-  builder.setInsertionPoint(bbs[0])
-  builder.createBr(bbs[1])
-  builder.setInsertionPoint(bbs[bbs.length - 1])
+  let format
+  const printf = module.getOrInsertFunction('printf', printfFunctionType)
+
+  const entry = l.BasicBlock.create(context, 'entry', fun)
+  const tmpBlock = l.BasicBlock.create(context, 'tmp', fun)
+  const displayNumberBlock = l.BasicBlock.create(context, 'display_number', fun)
+  const displayBooleanBlock = l.BasicBlock.create(context, 'display_boolean', fun)
+  const printTrueBlock = l.BasicBlock.create(context, 'print_true', fun)
+  const printFalseBlock = l.BasicBlock.create(context, 'print_false', fun)
+  const displayStringBlock = l.BasicBlock.create(context, 'display_string', fun)
+  const endBlock = l.BasicBlock.create(context, 'end', fun)
+
+  builder.setInsertionPoint(entry)
+
+  const format_number = builder.createGlobalString('%lf', 'format_number')
+  const format_true = builder.createGlobalString('true', 'format_true')
+  const format_false = builder.createGlobalString('false', 'format_false')
+  const format_string = builder.createGlobalString('"%s"', 'format_string')
+  const format_error = builder.createGlobalString('error: %s\n', 'format_error')
+
+  const zero = l.ConstantInt.get(context, 0)
+  const one = l.ConstantInt.get(context, 1)
+  const oneFP = l.ConstantFP.get(context, 1)
+
+  const literal = fun.getArguments()[0]!
+  const typePtr = builder.createInBoundsGEP(literal, [zero, zero])
+  const valuePtr = builder.createInBoundsGEP(literal, [zero, one])
+
+  const type = builder.createLoad(typePtr)
+  const value = builder.createLoad(valuePtr)
+
+  // const NUMBER_CODE = l.ConstantFP.get(context, 1)
+  const BOOLEAN_CODE = l.ConstantFP.get(context, 2)
+  const STRING_CODE = l.ConstantFP.get(context, 3)
+
+  const isBoolean = builder.createFCmpOEQ(type, BOOLEAN_CODE)
+  builder.createCondBr(isBoolean, displayBooleanBlock, tmpBlock)
+
+  builder.setInsertionPoint(tmpBlock)
+  const isString = builder.createFCmpOEQ(type, STRING_CODE)
+  builder.createCondBr(isString, displayStringBlock, displayNumberBlock)
+
+  /* DISPLAY NUMBER */
+  builder.setInsertionPoint(displayNumberBlock)
+  format = builder.createBitCast(format_number, l.Type.getInt8PtrTy(context))
+  builder.createCall(printf.functionType, printf.callee, [format, value])
+  builder.createBr(endBlock)
+
+  /* DISPLAY BOOLEAN */
+  builder.setInsertionPoint(displayBooleanBlock)
+  const isTrue = builder.createFCmpOEQ(value, oneFP)
+  builder.createCondBr(isTrue, printTrueBlock, printFalseBlock)
+  builder.setInsertionPoint(printTrueBlock)
+  format = builder.createBitCast(format_true, l.Type.getInt8PtrTy(context))
+  builder.createCall(printf.functionType, printf.callee, [format])
+  builder.createBr(endBlock)
+  builder.setInsertionPoint(printFalseBlock)
+  format = builder.createBitCast(format_false, l.Type.getInt8PtrTy(context))
+  builder.createCall(printf.functionType, printf.callee, [format])
+  builder.createBr(endBlock)
+
+  /* DISPLAY STRING */
+  builder.setInsertionPoint(displayStringBlock)
+  const intType = l.Type.getInt64Ty(context)
+  const str = builder.createBitCast(value, intType)
+  format = builder.createBitCast(format_string, l.Type.getInt8PtrTy(context))
+  builder.createCall(printf.functionType, printf.callee, [format, str])
+  builder.createBr(endBlock)
+
+  builder.setInsertionPoint(endBlock)
   builder.createRetVoid()
+
   try {
     l.verifyFunction(fun)
   } catch (e) {
     console.error(module.print())
     throw e
   }
-  // const type = builder.\\
 }
 
 function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
@@ -83,13 +116,6 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
   const argstype = [l.Type.getInt8PtrTy(context)]
   const funtype = l.FunctionType.get(l.Type.getInt32Ty(context), argstype, true)
   module.getOrInsertFunction('printf', funtype)
-
-  // decalre format strings
-  // builder.createGlobalStringPtr("%d", "format_number")
-  // builder.createGlobalStringPtr("true", "format_true")
-  // builder.createGlobalStringPtr("false", "format_false")
-  // builder.createGlobalStringPtr("%s", "format_string")
-  // builder.createGlobalStringPtr("error: %s", "format_error")
 
   const structType = l.StructType.create(context, 'literal')
   // Type followed by value
