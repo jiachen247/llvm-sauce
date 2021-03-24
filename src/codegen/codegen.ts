@@ -263,15 +263,50 @@ function evalBinaryStatement(
 }
 
 function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: LLVMObjs): l.Value {
-  const operator = node.operator
+  const operator: string = node.operator
   const arg = evaluate(node.argument, env, lObj)
-  const val = arg.type.isPointerTy() ? lObj.builder.createLoad(arg) : arg
+
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const zero = l.ConstantInt.get(lObj.context, 0)
+  const one = l.ConstantInt.get(lObj.context, 1)
+
+  const expr = lObj.builder.createInBoundsGEP(literalStruct, arg, [zero, one])
+
+  const exprValue = lObj.builder.createLoad(expr)
+
+  const intType = l.Type.getInt64Ty(lObj.context)
+  const doubleType = l.Type.getDoubleTy(lObj.context)
+
+  let value, retType, tmp
+
   switch (operator) {
     case '!':
-      return lObj.builder.createNot(val)
+
+    /*
+    display(true);
+    display(!true);
+    display(false);
+    display(!false);
+    node {2.000000, 1.000000}
+    node {2.000000, -2.000000}
+    node {2.000000, 0.000000}
+    node {2.000000, -1.000000}
+
+    todo fix this!
+    */
+      const exprInt = lObj.builder.createFPToSI(exprValue, intType)
+      tmp = lObj.builder.createNot(exprInt) 
+      value = lObj.builder.createSIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
+    case '-unary':
+      tmp = lObj.builder.createFNeg(exprValue)
+      retType = NUMBER_CODE
     default:
       throw new Error('Unknown operator ' + operator)
   }
+
+  return createLiteral(value, retType, lObj)
 }
 
 const SIZE_OF_DATA_NODE = 16
