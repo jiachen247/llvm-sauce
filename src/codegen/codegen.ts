@@ -107,7 +107,6 @@ function evalProgramExpression(node: es.Program, parent: Environment, lObj: LLVM
   const envValue = createEnv(environmentSize, lObj)
   programEnv.setParent(parent)
   programEnv.setFrame(envValue)
-  
 
   node.body.map(x => evaluate(x, programEnv, lObj))
   functionTeardown(mainFun, lObj)
@@ -149,7 +148,7 @@ function evalIdentifierExpression(node: es.Identifier, env: Environment, lObj: L
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)!
 
   for (let i = 0; i < jumps; i++) {
-    const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!, "jiachen")
+    const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!)
     frame = lObj.builder.createLoad(tmp)
   }
 
@@ -177,53 +176,90 @@ function evalBinaryStatement(
 ): l.Value {
   const lhs = evaluate(node.left, env, lObj)
   const rhs = evaluate(node.right, env, lObj)
-  const left = lhs.type.isPointerTy() ? lObj.builder.createLoad(lhs) : lhs
-  const right = rhs.type.isPointerTy() ? lObj.builder.createLoad(rhs) : rhs
+
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const zero = l.ConstantInt.get(lObj.context, 0)
+  const one = l.ConstantInt.get(lObj.context, 1)
+
+  const left = lObj.builder.createInBoundsGEP(literalStruct, lhs, [zero, one])
+  const right = lObj.builder.createInBoundsGEP(literalStruct, rhs, [zero, one])
+
+  const leftValue = lObj.builder.createLoad(left)
+  const rightValue = lObj.builder.createLoad(right)
+
+  const intType = l.Type.getInt64Ty(lObj.context)
+  const doubleType = l.Type.getDoubleTy(lObj.context)
+
+  // should we do runtime type checks?
+  // how to throw error?
+  // should refractor
   const operator = node.operator
+  let value, retType, tmp, leftValueBool, rightValueBool
   switch (operator) {
     case '+':
-      // It is a hack. We do not have int arrays. All numbers are double.
-      // Therefore we just assume int implies char. If we get an int array we
-      // do concatenation. We can consider a tagged data structure in the
-      // future.
-      // TODO IMPLEMENT
-      if (
-        left.type.isPointerTy() &&
-        right.type.isPointerTy() &&
-        left.type.elementType.isArrayTy() &&
-        right.type.elementType.isArrayTy()
-      ) {
-        let lt = left.type.elementType as l.ArrayType
-        let rt = right.type.elementType as l.ArrayType
-        if (lt.elementType.isIntegerTy() && rt.elementType.isIntegerTy()) {
-          const llen = lt.numElements
-          const rlen = rt.numElements
-        }
-      }
-      return lObj.builder.createFAdd(left, right)
+      // todo implement string concat
+      value = lObj.builder.createFAdd(leftValue, rightValue)
+      retType = NUMBER_CODE
+      break
     case '-':
-      return lObj.builder.createFSub(left, right)
+      value = lObj.builder.createFSub(leftValue, rightValue)
+      retType = NUMBER_CODE
+      break
     case '*':
-      return lObj.builder.createFMul(left, right)
+      value = lObj.builder.createFMul(leftValue, rightValue)
+      retType = NUMBER_CODE
+      break
     case '/':
-      return lObj.builder.createFDiv(left, right)
+      value = lObj.builder.createFDiv(leftValue, rightValue)
+      retType = NUMBER_CODE
+      break
     case '<':
-      return lObj.builder.createFCmpOLT(left, right)
+      tmp = lObj.builder.createFCmpOLT(leftValue, rightValue)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     case '>':
-      return lObj.builder.createFCmpOGT(left, right)
+      tmp = lObj.builder.createFCmpOGT(leftValue, rightValue)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     case '===':
-      return lObj.builder.createFCmpOEQ(left, right)
+      value = lObj.builder.createFCmpOEQ(leftValue, rightValue)
+      retType = BOOLEAN_CODE
+
+      tmp = lObj.builder.createFCmpOEQ(leftValue, rightValue)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     case '<=':
-      return lObj.builder.createFCmpOLE(left, right)
+      tmp = lObj.builder.createFCmpOLE(leftValue, rightValue)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     case '>=':
-      return lObj.builder.createFCmpOGE(left, right)
+      tmp = lObj.builder.createFCmpOGE(leftValue, rightValue)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     case '&&':
-      return lObj.builder.createAnd(left, right)
+      leftValueBool = lObj.builder.createFPToSI(leftValue, intType)
+      rightValueBool = lObj.builder.createFPToSI(rightValue, intType)
+      tmp = lObj.builder.createAnd(leftValueBool, rightValueBool)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     case '||':
-      return lObj.builder.createOr(left, right)
+      leftValueBool = lObj.builder.createFPToSI(leftValue, intType)
+      rightValueBool = lObj.builder.createFPToSI(rightValue, intType)
+      tmp = lObj.builder.createOr(leftValueBool, rightValueBool)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
     default:
       throw new Error('Unknown operator ' + operator)
   }
+
+  return createLiteral(value, retType, lObj)
 }
 
 function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: LLVMObjs): l.Value {
@@ -238,6 +274,43 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
   }
 }
 
+const SIZE_OF_DATA_NODE = 16
+// returns a pointer to a data node
+
+// where value is double
+function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
+  const raw: l.Value = malloc(SIZE_OF_DATA_NODE, lObj)
+  const literalStructPtr = l.PointerType.get(lObj.module.getTypeByName('literal')!, 0)
+  const zero = l.ConstantInt.get(lObj.context, 0)
+  const one = l.ConstantInt.get(lObj.context, 1)
+
+  const literal = lObj.builder.createBitCast(raw, literalStructPtr)
+  const typePtr = lObj.builder.createInBoundsGEP(literal, [zero, zero])
+  const valuePtr = lObj.builder.createInBoundsGEP(literal, [zero, one])
+
+  let casted = value
+
+  // struct defines value to be a double
+  const doubleType = l.Type.getDoubleTy(lObj.context)
+  if (value.type.typeID != doubleType.typeID) {
+    casted = lObj.builder.createBitCast(value, doubleType)
+  }
+
+  lObj.builder.createStore(typeCode, typePtr, false)
+  lObj.builder.createStore(value, valuePtr, false)
+  return literal
+}
+
+function createNumberLiteral(n: number, lObj: LLVMObjs): l.Value {
+  const numValue = l.ConstantFP.get(lObj.context, n)
+  return createLiteral(numValue, NUMBER_CODE, lObj)
+}
+
+function createBooleanLiteral(value: boolean, lObj: LLVMObjs): l.Value {
+  const boolValue = value ? l.ConstantFP.get(lObj.context, 1) : l.ConstantFP.get(lObj.context, 0)
+  return createLiteral(boolValue, BOOLEAN_CODE, lObj)
+}
+
 /*
 literal
 -----------------
@@ -250,10 +323,6 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
   // malloc 16 bytes
   // write type to offset 0
   // wirte data to offset 16
-
-  const raw: l.Value = malloc(16, lObj)
-  const literalStruct = l.PointerType.get(lObj.module.getTypeByName('literal')!, 0)
-  const block = lObj.builder.createBitCast(raw, literalStruct)
 
   switch (typeof value) {
     case 'string':
@@ -273,38 +342,15 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
       //   // )
       //   lObj.builder.createStore(actualString, casted, false)
       //   // lObj.builder.createStore(STRING_CODE, stringTypePtr, false)
-      break
-    case 'number':
-      const actualValue = l.ConstantFP.get(lObj.context, value)
-      // const typePtr = lObj.builder.createBitCast(block, l.Type.getDoublePtrTy(lObj.context))
-      const typePtr = lObj.builder.createInBoundsGEP(block, [
-        l.ConstantInt.get(lObj.context, 0),
-        l.ConstantInt.get(lObj.context, 0)
-      ])
-      const valuePtr = lObj.builder.createInBoundsGEP(block, [
-        l.ConstantInt.get(lObj.context, 0),
-        l.ConstantInt.get(lObj.context, 1)
-      ])
 
-      lObj.builder.createStore(actualValue, valuePtr, false)
-      lObj.builder.createStore(NUMBER_CODE, typePtr, false)
-      break
+      return l.ConstantInt.get(lObj.context, 1)
+    case 'number':
+      return createNumberLiteral(value, lObj)
     case 'boolean':
-      const boolValue = value
-        ? l.ConstantFP.get(lObj.context, 0)
-        : l.ConstantFP.get(lObj.context, 0)
-      const boolTypePtr = lObj.builder.createBitCast(block, l.Type.getDoublePtrTy(lObj.context))
-      const valueBoolPtr = lObj.builder.createInBoundsGEP(block, [
-        l.ConstantInt.get(lObj.context, 0),
-        l.ConstantInt.get(lObj.context, 1)
-      ])
-      lObj.builder.createStore(boolValue, valueBoolPtr, false)
-      lObj.builder.createStore(BOOLEAN_CODE, boolTypePtr, false)
-      break
+      return createBooleanLiteral(value, lObj)
     default:
       throw new Error('Unimplemented literal type ' + typeof value)
   }
-  return block
 }
 
 function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
