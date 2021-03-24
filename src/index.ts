@@ -35,7 +35,7 @@ function main() {
 function compile(options: any, code: string) {
   const chapter = parseInt(options.chapter, 10)
   const context: Context = createContext(chapter)
-  let estree: es.Program | undefined = slang_parse(code, context)
+  let estree: es.Program | undefined = slang_parse( "{" + code + "}", context)
 
   if (!estree) {
     return Promise.reject(new CompileError('js-slang cannot parse the program'))
