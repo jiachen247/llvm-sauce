@@ -5,8 +5,7 @@ interface LLVMObjs {
   context: l.LLVMContext
   module: l.Module
   builder: l.IRBuilder
-  trueStr?: l.Value // strings for representation of boolean true, i.e. "true"
-  falseStr?: l.Value // "false"
+  function?: l.Function
 }
 
 export { LLVMObjs }

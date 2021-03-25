@@ -98,6 +98,7 @@ function createEnv(count: number, lObj: LLVMObjs): l.Value {
 function evalProgramExpression(node: es.Program, parent: Environment, lObj: LLVMObjs): l.Value {
   const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
   const mainFun = functionSetup(voidFunType, 'main', lObj)
+  lObj.function = mainFun
 
   const programEnv = Environment.createNewEnvironment()
   const environmentSize = scanOutDir(node.body, programEnv)
@@ -176,6 +177,7 @@ function evalBinaryStatement(
   const rhs = evaluate(node.right, env, lObj)
 
   const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const zero = l.ConstantInt.get(lObj.context, 0)
   const one = l.ConstantInt.get(lObj.context, 1)
 
@@ -195,10 +197,49 @@ function evalBinaryStatement(
   let value, retType, tmp, leftValueBool, rightValueBool
   switch (operator) {
     case '+':
-      // todo implement string concat
-      value = lObj.builder.createFAdd(leftValue, rightValue)
-      retType = NUMBER_CODE
-      break
+      // overload string concat
+      // super hacky need to refractor
+      const numAddBlock = l.BasicBlock.create(lObj.context, 'num_add', lObj.function)
+      const strcatBlock = l.BasicBlock.create(lObj.context, 'str_add', lObj.function)
+      const endBlock = l.BasicBlock.create(lObj.context, 'end', lObj.function)
+
+      const lefType = lObj.builder.createInBoundsGEP(literalStruct, lhs, [zero, zero])
+      const leftTypeValue = lObj.builder.createLoad(lefType)
+      const isBoolean = lObj.builder.createFCmpOEQ(leftTypeValue, NUMBER_CODE)
+
+      lObj.builder.createCondBr(isBoolean, numAddBlock, strcatBlock)
+
+      /* ADD NUMBERS */
+      lObj.builder.setInsertionPoint(numAddBlock)
+      const valNum = lObj.builder.createFAdd(leftValue, rightValue)
+      const valNumNode = createLiteral(valNum, NUMBER_CODE, lObj)
+      lObj.builder.createBr(endBlock)
+
+      /* CONCAT STRINGS */
+      // TODO FIX 
+      // llvm node got no inttoptr ins
+
+      lObj.builder.setInsertionPoint(strcatBlock)
+      // const str1 = lObj.builder.createIntCast(leftValue, l.Type.getInt8PtrTy(lObj.context), false)
+      // const str2 = lObj.builder.createIntCast(rightValue, l.Type.getInt8PtrTy(lObj.context), false)
+      // const strcatType = l.FunctionType.get(
+      //   l.Type.getInt8PtrTy(lObj.context),
+      //   [l.Type.getInt8PtrTy(lObj.context), l.Type.getInt8PtrTy(lObj.context)],
+      //   false
+      // )
+      // const strCatFun = lObj.module.getOrInsertFunction('strcat', strcatType)
+      // const val2 = lObj.builder.createCall(strCatFun.functionType, strCatFun.callee, [str1, str2])
+      // // const strAsInt = lObj.builder.createPtrToInt(val2, intType)
+      // // const strAsDouble = lObj.builder.createUIToFP(strAsInt, doubleType)
+      // const valStrNode = createLiteral(val2, STRING_CODE, lObj)
+      const broken = createLiteral(l.ConstantFP.get(lObj.context, 1), NUMBER_CODE, lObj)
+      lObj.builder.createBr(endBlock)
+
+      lObj.builder.setInsertionPoint(endBlock)
+      const phi = lObj.builder.createPhi(literalStructPtr, 2)
+      phi.addIncoming(valNumNode, numAddBlock)
+      phi.addIncoming(broken, strcatBlock)
+      return phi
     case '-':
       value = lObj.builder.createFSub(leftValue, rightValue)
       retType = NUMBER_CODE
@@ -308,7 +349,6 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
 const SIZE_OF_DATA_NODE = 16
 // returns a pointer to a data node
 
-// where value is double
 function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
   const raw: l.Value = malloc(SIZE_OF_DATA_NODE, lObj)
   const literalStructPtr = l.PointerType.get(lObj.module.getTypeByName('literal')!, 0)
@@ -319,13 +359,13 @@ function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
   const typePtr = lObj.builder.createInBoundsGEP(literal, [zero, zero])
   const valuePtr = lObj.builder.createInBoundsGEP(literal, [zero, one])
 
-  let casted = value
+  // let casted = value
 
-  // struct defines value to be a double
-  const doubleType = l.Type.getDoubleTy(lObj.context)
-  if (value.type.typeID != doubleType.typeID) {
-    casted = lObj.builder.createBitCast(value, doubleType)
-  }
+  // // struct defines value to be a double
+  // const doubleType = l.Type.getDoubleTy(lObj.context)
+  // if (value.type.typeID != doubleType.typeID) {
+  //   casted = lObj.builder.createBitCast(value, doubleType)
+  // }
 
   lObj.builder.createStore(typeCode, typePtr, false)
   lObj.builder.createStore(value, valuePtr, false)

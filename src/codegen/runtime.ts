@@ -108,14 +108,28 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
     [l.Type.getInt64Ty(context)],
     false
   )
-  // Delare abi / os functions
-  // malloc - declare i8* @malloc(i64) #1
+  //  declare i8* @malloc(i64) #1
   module.getOrInsertFunction('malloc', mallocFunctionType)
 
   // declare printf
   const argstype = [l.Type.getInt8PtrTy(context)]
   const funtype = l.FunctionType.get(l.Type.getInt32Ty(context), argstype, true)
   module.getOrInsertFunction('printf', funtype)
+
+  // declare strcat
+  // declare i8* @strcat(i8*, i8*)
+  // const strcatType = l.FunctionType.get(
+  //   l.Type.getInt8PtrTy(context),
+  //   [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
+  //   false
+  // )
+
+  const strcatType = l.FunctionType.get(
+    l.Type.getInt8PtrTy(context),
+    [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
+    false
+  )
+  module.getOrInsertFunction('strcat', strcatType)
 
   const structType = l.StructType.create(context, 'literal')
   // Type followed by value
