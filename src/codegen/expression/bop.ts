@@ -43,7 +43,7 @@ function evalBinaryStatement(
   switch (operator) {
     case '+':
       // overload string concat
-      // super hacky need to refractor
+
       const numAddBlock = l.BasicBlock.create(lObj.context, 'num_add', lObj.function)
       const strcatBlock = l.BasicBlock.create(lObj.context, 'str_add', lObj.function)
       const endBlock = l.BasicBlock.create(lObj.context, 'end', lObj.function)

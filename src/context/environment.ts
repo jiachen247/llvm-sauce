@@ -11,7 +11,7 @@ enum Type {
 }
 
 interface Location {
-  jump: number,
+  jump: number
   offset: number
 }
 

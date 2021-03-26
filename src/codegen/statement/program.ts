@@ -18,16 +18,24 @@ function evalProgramStatement(node: es.Program, parent: Environment, lObj: LLVMO
   programEnv.setFrame(envValue)
 
   node.body.map(x => evaluateStatement(x, programEnv, lObj))
-  functionTeardown(mainFun, lObj)
+  lObj.builder.createRetVoid()
+  // functionTeardown(mainFun, lObj)
+  try {
+    l.verifyFunction(mainFun)
+  } catch (e) {
+    console.error(lObj.module.print())
+    throw e
+  }
   return mainFun
 }
 
 function functionSetup(funtype: l.FunctionType, name: string, lObj: LLVMObjs): l.Function {
   const fun = l.Function.create(funtype, l.LinkageTypes.ExternalLinkage, 'main', lObj.module)
   // The hoist block is used to hoist alloca to the top.
-  const hoist = l.BasicBlock.create(lObj.context, 'hoist', fun)
+  // const hoist = l.BasicBlock.create(lObj.context, 'hoist', fun)
   const entry = l.BasicBlock.create(lObj.context, 'entry', fun)
   lObj.builder.setInsertionPoint(entry)
+
   return fun
 }
 

@@ -26,15 +26,13 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
   const intType = l.Type.getInt64Ty(lObj.context)
   const doubleType = l.Type.getDoubleTy(lObj.context)
 
-  
-
   let value, retType, tmp
 
   switch (operator) {
     case '!':
       const exprInt = lObj.builder.createFPToSI(exprValue, i1)
       tmp = lObj.builder.createNot(exprInt)
-      value = lObj.builder.createSIToFP(tmp, doubleType)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '-':

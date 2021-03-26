@@ -14,7 +14,6 @@ import { evalBinaryStatement } from './expression/bop'
 import { evalLiteralExpression } from './expression/literal'
 import { evalCallExpression } from './expression/call'
 
-
 const statementHandlers = {
   Program: evalProgramStatement,
   VariableDeclaration: evalVariableDeclarationExpression,
