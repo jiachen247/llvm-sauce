@@ -41,7 +41,7 @@ class Environment {
     this.push(name, record)
   }
 
-  push(name: string, tr: TypeRecord): void {
+  push(name: string, tr: Record): void {
     this.names.set(name, tr)
   }
 
@@ -58,7 +58,7 @@ class Environment {
   }
 
   getGlobal(name: any): Value | undefined {
-    return this.globals.get(name)
+    return this.globals?.get(name)
   }
 
   addType(name: string, value: TypeRecord): TypeRecord {
@@ -67,7 +67,7 @@ class Environment {
   }
 
   addGlobal(name: any, value: Value): Value {
-    this.globals.set(name, value)
+    this.globals?.set(name, value)
     return value
   }
 
@@ -88,4 +88,4 @@ class Environment {
   }
 }
 
-export { Environment, Type, TypeRecord }
+export { Environment, Location, Type, Record as TypeRecord }
