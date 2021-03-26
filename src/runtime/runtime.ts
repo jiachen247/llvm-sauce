@@ -1,5 +1,53 @@
 import * as l from 'llvm-node'
 
+function buildErrorFunction(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
+  /*
+    function error(message) {
+      // prints error message and exit processs
+    }
+  */
+
+  const errorFunctionType = l.FunctionType.get(
+    l.Type.getVoidTy(context),
+    [l.Type.getInt8PtrTy(context)],
+    false
+  )
+
+  const fun = l.Function.create(errorFunctionType, l.LinkageTypes.ExternalLinkage, 'error', module)
+  const entry = l.BasicBlock.create(context, 'entry', fun)
+  builder.setInsertionPoint(entry)
+
+  const exitType = l.FunctionType.get(
+    l.Type.getVoidTy(context),
+    [l.Type.getInt32Ty(context)],
+    false
+  )
+
+  const printfFunctionType = l.FunctionType.get(
+    l.Type.getInt64Ty(context),
+    [l.Type.getInt8PtrTy(context)],
+    true
+  )
+
+  const format_error = builder.createGlobalStringPtr('error: "%s"\n', 'format_error')
+  const exit = module.getOrInsertFunction('exit', exitType)
+  const display = module.getOrInsertFunction('printf', printfFunctionType)
+  const message = fun.getArguments()[0]!
+  const one = l.ConstantInt.get(context, 1)
+
+  builder.createCall(display.functionType, display.callee, [format_error, message])
+  builder.createCall(exit.functionType, exit.callee, [one])
+
+  builder.createRetVoid()
+
+  try {
+    l.verifyFunction(fun)
+  } catch (e) {
+    console.error(module.print())
+    throw e
+  }
+}
+
 function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
   // for now can just print out struct
   const displayFunctionType = l.FunctionType.get(
@@ -40,7 +88,6 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   const format_true = builder.createGlobalString('true\n', 'format_true')
   const format_false = builder.createGlobalString('false\n', 'format_false')
   const format_string = builder.createGlobalString('"%s"\n', 'format_string')
-  const format_error = builder.createGlobalString('error: "%s"\n', 'format_error')
 
   const zero = l.ConstantInt.get(context, 0)
   const one = l.ConstantInt.get(context, 1)
@@ -86,6 +133,7 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   /* DISPLAY STRING */
   builder.setInsertionPoint(displayStringBlock)
   const intType = l.Type.getInt64Ty(context)
+  // can cast to stringlit if this doesnt work in the future
   const str = builder.createBitCast(value, intType)
   format = builder.createBitCast(format_string, l.Type.getInt8PtrTy(context))
   builder.createCall(printf.functionType, printf.callee, [format, str])
@@ -143,6 +191,14 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
   )
   module.getOrInsertFunction('strcat', strcatType)
 
+  // declare exit
+  const exitType = l.FunctionType.get(
+    l.Type.getVoidTy(context),
+    [l.Type.getInt32Ty(context)],
+    false
+  )
+  module.getOrInsertFunction('exit', exitType)
+
   // Type followed by value
   const structType = l.StructType.create(context, 'literal')
   structType.setBody([l.Type.getDoubleTy(context), l.Type.getDoubleTy(context)])
@@ -153,6 +209,8 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
 
   // declare display
   buildDisplayFunction(context, module, builder)
+
+  buildErrorFunction(context, module, builder)
 }
 
 export { buildRuntime }

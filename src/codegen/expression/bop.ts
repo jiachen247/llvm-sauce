@@ -75,10 +75,11 @@ function evalBinaryStatement(
       lObj.builder.createBr(endBlock)
 
       /* CONCAT STRINGS */
-      // strlen len both strings
-      // malloc new string with enough space
-      // copy new strings over
-      // to refractor
+      // 1. strlen len both strings
+      // 2. malloc new string with enough space
+      // 3. copy first string over
+      // 4. cat second string to the back
+      // to refractor into a function
       lObj.builder.setInsertionPoint(strcatBlock)
       const stringLiteral = lObj.module.getTypeByName('string_literal')!
       const stringLiteralPtr = l.PointerType.get(stringLiteral, 0)
