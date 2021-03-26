@@ -1,8 +1,5 @@
 node_modules/
 *.js
-!tests/
-!tests/*
-!tests/**
 *.map
 dist/
 .idea/
