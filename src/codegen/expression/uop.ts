@@ -22,25 +22,17 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
 
   const exprValue = lObj.builder.createLoad(expr)
 
+  const i1 = l.Type.getInt1Ty(lObj.context)
   const intType = l.Type.getInt64Ty(lObj.context)
   const doubleType = l.Type.getDoubleTy(lObj.context)
+
+  
 
   let value, retType, tmp
 
   switch (operator) {
     case '!':
-      /*
-      display(true);
-      display(!true);
-      display(false);
-      display(!false);
-      node {2.000000, 1.000000}
-      node {2.000000, -2.000000}
-      node {2.000000, 0.000000}
-      node {2.000000, -1.000000}
-      todo fix this!
-      */
-      const exprInt = lObj.builder.createFPToSI(exprValue, intType)
+      const exprInt = lObj.builder.createFPToSI(exprValue, i1)
       tmp = lObj.builder.createNot(exprInt)
       value = lObj.builder.createSIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE

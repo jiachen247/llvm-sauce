@@ -10,6 +10,11 @@ enum Type {
   UNKNOWN
 }
 
+interface Location {
+  jump: number,
+  offset: number
+}
+
 interface TypeRecord {
   offset: number
   // depreceated
@@ -41,7 +46,7 @@ class Environment {
     this.push(name, record)
   }
 
-  push(name: string, tr: Record): void {
+  push(name: string, tr: TypeRecord): void {
     this.names.set(name, tr)
   }
 
@@ -88,4 +93,4 @@ class Environment {
   }
 }
 
-export { Environment, Location, Type, Record as TypeRecord }
+export { Environment, Location, Type, TypeRecord }

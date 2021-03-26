@@ -32,6 +32,7 @@ function evalBinaryStatement(
   const rightValue = lObj.builder.createLoad(right)
 
   const intType = l.Type.getInt64Ty(lObj.context)
+  const i1 = l.Type.getInt1Ty(lObj.context)
   const doubleType = l.Type.getDoubleTy(lObj.context)
 
   // should we do runtime type checks?
@@ -114,10 +115,12 @@ function evalBinaryStatement(
       retType = BOOLEAN_CODE
       break
     case '===':
-      value = lObj.builder.createFCmpOEQ(leftValue, rightValue)
-      retType = BOOLEAN_CODE
-
       tmp = lObj.builder.createFCmpOEQ(leftValue, rightValue)
+      value = lObj.builder.createUIToFP(tmp, doubleType)
+      retType = BOOLEAN_CODE
+      break
+    case '!==':
+      tmp = lObj.builder.createFCmpUNE(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
@@ -132,15 +135,15 @@ function evalBinaryStatement(
       retType = BOOLEAN_CODE
       break
     case '&&':
-      leftValueBool = lObj.builder.createFPToSI(leftValue, intType)
-      rightValueBool = lObj.builder.createFPToSI(rightValue, intType)
+      leftValueBool = lObj.builder.createFPToSI(leftValue, i1)
+      rightValueBool = lObj.builder.createFPToSI(rightValue, i1)
       tmp = lObj.builder.createAnd(leftValueBool, rightValueBool)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '||':
-      leftValueBool = lObj.builder.createFPToSI(leftValue, intType)
-      rightValueBool = lObj.builder.createFPToSI(rightValue, intType)
+      leftValueBool = lObj.builder.createFPToSI(leftValue, i1)
+      rightValueBool = lObj.builder.createFPToSI(rightValue, i1)
       tmp = lObj.builder.createOr(leftValueBool, rightValueBool)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
