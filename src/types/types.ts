@@ -1,11 +1,15 @@
 import * as l from 'llvm-node'
 
-// This is simply one object that carries all the LLVM globals around
 interface LLVMObjs {
   context: l.LLVMContext
   module: l.Module
   builder: l.IRBuilder
-  function?: l.Function
+  function?: l.Function // current function
 }
 
-export { LLVMObjs }
+interface Location {
+  jumps: number
+  offset: number
+}
+
+export { LLVMObjs, Location }
