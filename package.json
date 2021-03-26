@@ -4,7 +4,7 @@
   "description": "A yummy source to llvm IR compiler!",
   "main": "dist/index",
   "scripts": {
-    "test": "tests/test.sh",
+    "test": "/bin/bash ./tests/test.sh ",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:ci": "prettier --list-different \"src/**/*.{ts,tsx}\"",
     "eslint": "eslint --ext \".ts,.tsx\" src",

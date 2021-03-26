@@ -252,6 +252,13 @@ function evalBinaryStatement(
       value = lObj.builder.createFDiv(leftValue, rightValue)
       retType = NUMBER_CODE
       break
+    case '%':
+      const l1 = lObj.builder.createFPToSI(leftValue, intType)
+      const r1 = lObj.builder.createFPToSI(rightValue, intType)
+      const v = lObj.builder.createSRem(l1, r1)
+      value = lObj.builder.createSIToFP(v, doubleType)
+      retType = NUMBER_CODE
+      break
     case '<':
       tmp = lObj.builder.createFCmpOLT(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
@@ -336,11 +343,12 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
       value = lObj.builder.createSIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
-    case '-unary':
-      tmp = lObj.builder.createFNeg(exprValue)
+    case '-':
+      value = lObj.builder.createFNeg(exprValue)
       retType = NUMBER_CODE
+      break
     default:
-      throw new Error('Unknown operator ' + operator)
+      throw new Error('Unknown unary operator ' + operator)
   }
 
   return createLiteral(value, retType, lObj)
@@ -514,7 +522,7 @@ function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMOb
   lObj.builder.createBr(endBlock)
 
   lObj.builder.setInsertionPoint(alternativeBlock)
-  evaluate(node.alternate!, parent, lObj)
+  evalBlockStatement(node.alternate!, parent, lObj)
   lObj.builder.createBr(endBlock)
 
   lObj.builder.setInsertionPoint(endBlock)
