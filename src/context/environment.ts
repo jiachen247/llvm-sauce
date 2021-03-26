@@ -1,4 +1,5 @@
-import { Value, BasicBlock } from 'llvm-node'
+import { Value } from 'llvm-node'
+import * as l from 'llvm-node'
 
 enum Type {
   ARRAY,
@@ -9,49 +10,58 @@ enum Type {
   UNKNOWN
 }
 
-enum Location {
-  BLOCK,
-  FUNCTION
-}
-
-interface Record {
-  value: Value
+interface TypeRecord {
+  offset: number
+  // depreceated
+  // value?: Value
   type?: Type
   // For functions, this records the function signature. [A, B] means sig of A => B.
   funSig?: [Type[], Type[]]
 }
 
 class Environment {
-  private names: Map<string, Record>
-  private globals?: Map<any, Value>
-  public loc: Location
+  private names: Map<string, TypeRecord>
+  private globals: Map<any, Value>
   private parent?: Environment
-  constructor(theNames: Map<string, Record>, theLoc: Location, theGlobals?: Map<any, Value>) {
+  private frame?: Value
+  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
     this.names = theNames
-    this.loc = theLoc
-    this.globals = theGlobals ? theGlobals : undefined
+    this.globals = theGlobals
+    this.parent = undefined
+  }
+
+  static createNewEnvironment() {
+    return new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
+  }
+
+  addRecord(name: string, offset: number) {
+    const record: TypeRecord = {
+      offset: offset
+    }
+    this.push(name, record)
   }
 
   push(name: string, tr: Record): void {
     this.names.set(name, tr)
   }
 
-  get(name: string): Record | undefined {
-    let v = this.names.get(name)
-    if (!v) {
-      if (this.parent) {
-        return this.parent.get(name)
-      }
-      return undefined
-    }
-    return v
+  contains(name: string): boolean {
+    return this.names.has(name)
+  }
+
+  get(name: string): TypeRecord | undefined {
+    return this.names.get(name)
+  }
+
+  getOffset(name: string): number | undefined {
+    return this.names.get(name)!.offset
   }
 
   getGlobal(name: any): Value | undefined {
     return this.globals?.get(name)
   }
 
-  add(name: string, value: Record): Record {
+  addType(name: string, value: TypeRecord): TypeRecord {
     this.names.set(name, value)
     return value
   }
@@ -61,10 +71,20 @@ class Environment {
     return value
   }
 
-  // Sets the parent of this to be to the argument.
-  // An environment can be the parent of multiple others.
   setParent(theParent: Environment): void {
     this.parent = theParent
+  }
+
+  getParent(): Environment | undefined {
+    return this.parent
+  }
+
+  getFrame() {
+    return this.frame
+  }
+
+  setFrame(value: l.Value) {
+    this.frame = value
   }
 }
 
