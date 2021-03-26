@@ -36,11 +36,11 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
 
   builder.setInsertionPoint(entry)
 
-  const format_number = builder.createGlobalString('%lf', 'format_number')
-  const format_true = builder.createGlobalString('true', 'format_true')
-  const format_false = builder.createGlobalString('false', 'format_false')
-  const format_string = builder.createGlobalString('"%s"', 'format_string')
-  const format_error = builder.createGlobalString('error: %s\n', 'format_error')
+  const format_number = builder.createGlobalString('%lf\n', 'format_number')
+  const format_true = builder.createGlobalString('true\n', 'format_true')
+  const format_false = builder.createGlobalString('false\n', 'format_false')
+  const format_string = builder.createGlobalString('"%s"\n', 'format_string')
+  const format_error = builder.createGlobalString('error: "%s"\n', 'format_error')
 
   const zero = l.ConstantInt.get(context, 0)
   const one = l.ConstantInt.get(context, 1)

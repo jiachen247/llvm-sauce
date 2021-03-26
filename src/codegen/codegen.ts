@@ -216,7 +216,7 @@ function evalBinaryStatement(
       lObj.builder.createBr(endBlock)
 
       /* CONCAT STRINGS */
-      // TODO FIX 
+      // TODO FIX
       // llvm node got no inttoptr ins
 
       lObj.builder.setInsertionPoint(strcatBlock)
@@ -489,6 +489,37 @@ function evalBlockStatement(node: es.Node, parent: Environment, lObj: LLVMObjs) 
   body.map(x => evaluate(x, env, lObj))
 }
 
+function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMObjs) {
+  const testResult = evaluate(node.test, parent, lObj)
+
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const zero = l.ConstantInt.get(lObj.context, 0)
+  const one = l.ConstantInt.get(lObj.context, 1)
+
+  const testResultValueAddress = lObj.builder.createInBoundsGEP(literalStruct, testResult, [
+    zero,
+    one
+  ])
+  const value = lObj.builder.createLoad(testResultValueAddress)
+  const asInt = lObj.builder.createFPToSI(value, l.Type.getInt1Ty(lObj.context))
+
+  const consequentBlock = l.BasicBlock.create(lObj.context, 'con', lObj.function!)
+  const alternativeBlock = l.BasicBlock.create(lObj.context, 'alt', lObj.function!)
+  const endBlock = l.BasicBlock.create(lObj.context, 'end', lObj.function!)
+
+  lObj.builder.createCondBr(asInt, consequentBlock, alternativeBlock)
+
+  lObj.builder.setInsertionPoint(consequentBlock)
+  evaluate(node.consequent, parent, lObj)
+  lObj.builder.createBr(endBlock)
+
+  lObj.builder.setInsertionPoint(alternativeBlock)
+  evaluate(node.alternate!, parent, lObj)
+  lObj.builder.createBr(endBlock)
+
+  lObj.builder.setInsertionPoint(endBlock)
+}
+
 function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
   const jumptable = {
     Program: evalProgramExpression,
@@ -500,7 +531,8 @@ function evaluate(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
     LogicalExpression: evalBinaryStatement,
     Literal: evalLiteralExpression,
     CallExpression: evalCallExpression,
-    BlockStatement: evalBlockStatement
+    BlockStatement: evalBlockStatement,
+    IfStatement: evalIfStatement
   }
   const fun = jumptable[node.type]
   if (fun) return fun(node, env, lObj)
