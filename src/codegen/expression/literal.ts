@@ -5,7 +5,7 @@ import { LLVMObjs } from '../../types/types'
 import { malloc } from '../helper'
 import { getNumberTypeCode, getBooleanTypeCode, getStringTypeCode } from '../helper'
 
-const SIZE_OF_DATA_NODE = 16
+const SIZE_OF_DATA_NODE = 16 // jiachen is very generous
 
 // returns a pointer to a data node
 function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
@@ -44,12 +44,30 @@ function createBooleanLiteral(value: boolean, lObj: LLVMObjs): l.Value {
   return createLiteral(boolValue, code, lObj)
 }
 
-function createStringLiteral(str: string, lObj: LLVMObjs) {
+function createCompileTimeStringLiteral(str: string, lObj: LLVMObjs): l.Value {
+  const strPtr = lObj.builder.createGlobalStringPtr(str, 's')
+  return createStringLiteral(strPtr, lObj)
+}
+
+function createStringLiteral(str: l.Value, lObj: LLVMObjs): l.Value {
   const code = getStringTypeCode(lObj)
-  const doubleType = l.Type.getDoubleTy(lObj.context)
-  const strPtr = lObj.builder.createGlobalStringPtr(str, 'str')
-  const strAsDouble = lObj.builder.createPtrToInt(strPtr, doubleType)
-  return createLiteral(strAsDouble, code, lObj)
+
+  const stringLiteral = l.PointerType.get(lObj.module.getTypeByName('string_literal')!, 0)
+  const literalStructPtr = l.PointerType.get(lObj.module.getTypeByName('literal')!, 0)
+
+  const raw: l.Value = malloc(SIZE_OF_DATA_NODE, lObj)
+
+  const zero = l.ConstantInt.get(lObj.context, 0)
+  const one = l.ConstantInt.get(lObj.context, 1)
+
+  const literal = lObj.builder.createBitCast(raw, stringLiteral)
+  const typePtr = lObj.builder.createInBoundsGEP(literal, [zero, zero])
+  const valuePtr = lObj.builder.createInBoundsGEP(literal, [zero, one])
+
+  lObj.builder.createStore(code, typePtr, false)
+  lObj.builder.createStore(str, valuePtr, false)
+
+  return lObj.builder.createBitCast(literal, literalStructPtr)
 }
 
 /*
@@ -57,6 +75,12 @@ literal
 -----------------
 | double: type  |
 | double: value |
+-----------------
+
+string literal
+-----------------
+| double: type  |
+| pointer: str  |
 -----------------
 */
 function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObjs): l.Value {
@@ -67,7 +91,7 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
 
   switch (typeof value) {
     case 'string':
-      return createStringLiteral(value, lObj)
+      return createCompileTimeStringLiteral(value, lObj)
     case 'number':
       return createNumberLiteral(value, lObj)
     case 'boolean':
@@ -77,4 +101,4 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
   }
 }
 
-export { evalLiteralExpression, createLiteral }
+export { evalLiteralExpression, createLiteral, createStringLiteral }

@@ -2,10 +2,20 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { getNumberTypeCode, getBooleanTypeCode, getStringTypeCode } from '../helper'
-import { createLiteral } from './literal'
-
+import {
+  getNumberTypeCode,
+  getBooleanTypeCode,
+  getStringTypeCode,
+  mallocByValue,
+  display
+} from '../helper'
+import { createLiteral, createStringLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
+import { STRING_TYPE_CODE } from '../constants'
+
+// function joinStrings(s1: l.Value, s2: l.Value): l.Value {
+
+// }
 
 function evalBinaryStatement(
   node: es.BinaryExpression | es.LogicalExpression,
@@ -13,6 +23,7 @@ function evalBinaryStatement(
   lObj: LLVMObjs
 ): l.Value {
   // todo make global
+
   const NUMBER_CODE = getNumberTypeCode(lObj)
   const BOOLEAN_CODE = getBooleanTypeCode(lObj)
   const STRING_CODE = getStringTypeCode(lObj)
@@ -24,16 +35,18 @@ function evalBinaryStatement(
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const zero = l.ConstantInt.get(lObj.context, 0)
   const one = l.ConstantInt.get(lObj.context, 1)
+  const one64 = l.ConstantInt.get(lObj.context, 1, 64)
+  const onefp = l.ConstantFP.get(lObj.context, 1)
 
   const left = lObj.builder.createInBoundsGEP(literalStruct, lhs, [zero, one])
   const right = lObj.builder.createInBoundsGEP(literalStruct, rhs, [zero, one])
 
-  const leftValue = lObj.builder.createLoad(left)
-  const rightValue = lObj.builder.createLoad(right)
-
   const intType = l.Type.getInt64Ty(lObj.context)
   const i1 = l.Type.getInt1Ty(lObj.context)
+  const i64 = l.Type.getInt64Ty(lObj.context)
   const doubleType = l.Type.getDoubleTy(lObj.context)
+
+  let leftValue, rightValue
 
   // should we do runtime type checks?
   // how to throw error?
@@ -43,41 +56,75 @@ function evalBinaryStatement(
   switch (operator) {
     case '+':
       // overload string concat
-
-      const numAddBlock = l.BasicBlock.create(lObj.context, 'num_add', lObj.function)
-      const strcatBlock = l.BasicBlock.create(lObj.context, 'str_add', lObj.function)
-      const endBlock = l.BasicBlock.create(lObj.context, 'end', lObj.function)
+      const numAddBlock = l.BasicBlock.create(lObj.context, 'add.num', lObj.function)
+      const strcatBlock = l.BasicBlock.create(lObj.context, 'add.str', lObj.function)
+      const endBlock = l.BasicBlock.create(lObj.context, 'add.end', lObj.function)
 
       const lefType = lObj.builder.createInBoundsGEP(literalStruct, lhs, [zero, zero])
-      const leftTypeValue = lObj.builder.createLoad(lefType)
-      const isBoolean = lObj.builder.createFCmpOEQ(leftTypeValue, NUMBER_CODE)
+      const v1 = lObj.builder.createLoad(lefType)
+      const isString = lObj.builder.createFCmpOEQ(v1, onefp)
 
-      lObj.builder.createCondBr(isBoolean, numAddBlock, strcatBlock)
+      lObj.builder.createCondBr(isString, numAddBlock, strcatBlock)
 
       /* ADD NUMBERS */
       lObj.builder.setInsertionPoint(numAddBlock)
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       const valNum = lObj.builder.createFAdd(leftValue, rightValue)
       const valNumNode = createLiteral(valNum, NUMBER_CODE, lObj)
       lObj.builder.createBr(endBlock)
 
       /* CONCAT STRINGS */
-      // TODO FIX
-      // llvm node got no inttoptr ins
-
+      // strlen len both strings
+      // malloc new string with enough space
+      // copy new strings over
+      // to refractor
       lObj.builder.setInsertionPoint(strcatBlock)
-      // const str1 = lObj.builder.createIntCast(leftValue, l.Type.getInt8PtrTy(lObj.context), false)
-      // const str2 = lObj.builder.createIntCast(rightValue, l.Type.getInt8PtrTy(lObj.context), false)
-      // const strcatType = l.FunctionType.get(
-      //   l.Type.getInt8PtrTy(lObj.context),
-      //   [l.Type.getInt8PtrTy(lObj.context), l.Type.getInt8PtrTy(lObj.context)],
-      //   false
-      // )
-      // const strCatFun = lObj.module.getOrInsertFunction('strcat', strcatType)
-      // const val2 = lObj.builder.createCall(strCatFun.functionType, strCatFun.callee, [str1, str2])
-      // // const strAsInt = lObj.builder.createPtrToInt(val2, intType)
-      // // const strAsDouble = lObj.builder.createUIToFP(strAsInt, doubleType)
-      // const valStrNode = createLiteral(val2, STRING_CODE, lObj)
-      const broken = createLiteral(l.ConstantFP.get(lObj.context, 1), NUMBER_CODE, lObj)
+      const stringLiteral = lObj.module.getTypeByName('string_literal')!
+      const stringLiteralPtr = l.PointerType.get(stringLiteral, 0)
+      const strLit1 = lObj.builder.createBitCast(lhs, stringLiteralPtr)
+      const strLit2 = lObj.builder.createBitCast(rhs, stringLiteralPtr)
+      const lit1 = lObj.builder.createInBoundsGEP(stringLiteral, strLit1, [zero, one])
+      const lit2 = lObj.builder.createInBoundsGEP(stringLiteral, strLit2, [zero, one])
+      const litval1 = lObj.builder.createLoad(lit1)
+      const litval2 = lObj.builder.createLoad(lit2)
+
+      const strlenType = l.FunctionType.get(
+        l.Type.getInt64Ty(lObj.context),
+        [l.Type.getInt8PtrTy(lObj.context)],
+        false
+      )
+
+      const strLenFun = lObj.module.getOrInsertFunction('strlen', strlenType)
+      const len1 = lObj.builder.createCall(strLenFun.functionType, strLenFun.callee, [litval1])
+      const len2 = lObj.builder.createCall(strLenFun.functionType, strLenFun.callee, [litval2])
+      const sum = lObj.builder.createAdd(len1, len2)
+      const total = lObj.builder.createAdd(sum, one64) // +1 for terminator
+
+      const newStrLocation = mallocByValue(total, lObj)
+
+      const strcpyType = l.FunctionType.get(
+        l.Type.getInt8PtrTy(lObj.context),
+        [l.Type.getInt8PtrTy(lObj.context), l.Type.getInt8PtrTy(lObj.context)],
+        false
+      )
+      const strcpy = lObj.module.getOrInsertFunction('strcpy', strcpyType)
+
+      // args: dest then src
+      lObj.builder.createCall(strcpy.functionType, strcpy.callee, [newStrLocation, litval1])
+
+      const strcatType = l.FunctionType.get(
+        l.Type.getInt8PtrTy(lObj.context),
+        [l.Type.getInt8PtrTy(lObj.context), l.Type.getInt8PtrTy(lObj.context)],
+        false
+      )
+
+      const strcat = lObj.module.getOrInsertFunction('strcat', strcatType)
+
+      lObj.builder.createCall(strcat.functionType, strcat.callee, [newStrLocation, litval2])
+
+      const broken = createStringLiteral(newStrLocation, lObj)
+
       lObj.builder.createBr(endBlock)
 
       lObj.builder.setInsertionPoint(endBlock)
@@ -86,18 +133,26 @@ function evalBinaryStatement(
       phi.addIncoming(broken, strcatBlock)
       return phi
     case '-':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       value = lObj.builder.createFSub(leftValue, rightValue)
       retType = NUMBER_CODE
       break
     case '*':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       value = lObj.builder.createFMul(leftValue, rightValue)
       retType = NUMBER_CODE
       break
     case '/':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       value = lObj.builder.createFDiv(leftValue, rightValue)
       retType = NUMBER_CODE
       break
     case '%':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       const l1 = lObj.builder.createFPToSI(leftValue, intType)
       const r1 = lObj.builder.createFPToSI(rightValue, intType)
       const v = lObj.builder.createSRem(l1, r1)
@@ -105,36 +160,50 @@ function evalBinaryStatement(
       retType = NUMBER_CODE
       break
     case '<':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       tmp = lObj.builder.createFCmpOLT(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '>':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       tmp = lObj.builder.createFCmpOGT(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '===':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       tmp = lObj.builder.createFCmpOEQ(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '!==':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       tmp = lObj.builder.createFCmpUNE(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '<=':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       tmp = lObj.builder.createFCmpOLE(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '>=':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       tmp = lObj.builder.createFCmpOGE(leftValue, rightValue)
       value = lObj.builder.createUIToFP(tmp, doubleType)
       retType = BOOLEAN_CODE
       break
     case '&&':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       leftValueBool = lObj.builder.createFPToSI(leftValue, i1)
       rightValueBool = lObj.builder.createFPToSI(rightValue, i1)
       tmp = lObj.builder.createAnd(leftValueBool, rightValueBool)
@@ -142,6 +211,8 @@ function evalBinaryStatement(
       retType = BOOLEAN_CODE
       break
     case '||':
+      leftValue = lObj.builder.createLoad(left)
+      rightValue = lObj.builder.createLoad(right)
       leftValueBool = lObj.builder.createFPToSI(leftValue, i1)
       rightValueBool = lObj.builder.createFPToSI(rightValue, i1)
       tmp = lObj.builder.createOr(leftValueBool, rightValueBool)

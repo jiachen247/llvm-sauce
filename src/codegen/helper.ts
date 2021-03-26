@@ -53,9 +53,7 @@ function lookup_env(name: string, frame: Environment): Location {
   }
 }
 
-function malloc(size: number, lObj: LLVMObjs, name?: string) {
-  const sizeValue = l.ConstantInt.get(lObj.context, size, 64)
-
+function mallocByValue(sizeValue: l.Value, lObj: LLVMObjs, name?: string) {
   const mallocFunType = l.FunctionType.get(
     l.Type.getInt8PtrTy(lObj.context),
     [l.Type.getInt64Ty(lObj.context)],
@@ -64,6 +62,12 @@ function malloc(size: number, lObj: LLVMObjs, name?: string) {
 
   const mallocFun = lObj.module.getOrInsertFunction('malloc', mallocFunType)
   return lObj.builder.createCall(mallocFun.functionType, mallocFun.callee, [sizeValue], name)
+}
+
+function malloc(size: number, lObj: LLVMObjs, name?: string) {
+  const sizeValue = l.ConstantInt.get(lObj.context, size, 64)
+
+  return mallocByValue(sizeValue, lObj, name)
 }
 
 function display(args: l.Value[], env: Environment, lObj: LLVMObjs): l.CallInst {
@@ -95,6 +99,7 @@ export {
   createEnv,
   lookup_env,
   malloc,
+  mallocByValue,
   display,
   getNumberTypeCode,
   getBooleanTypeCode,

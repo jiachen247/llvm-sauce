@@ -17,7 +17,7 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   )
 
   const printfFunctionType = l.FunctionType.get(
-    l.Type.getInt32Ty(context),
+    l.Type.getInt64Ty(context),
     [l.Type.getInt8PtrTy(context)],
     true
   )
@@ -113,17 +113,29 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
 
   // declare printf
   const argstype = [l.Type.getInt8PtrTy(context)]
-  const funtype = l.FunctionType.get(l.Type.getInt32Ty(context), argstype, true)
+  const funtype = l.FunctionType.get(l.Type.getInt64Ty(context), argstype, true)
   module.getOrInsertFunction('printf', funtype)
+
+  // declare strcpy
+  const strcpyType = l.FunctionType.get(
+    l.Type.getInt8PtrTy(context),
+    [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
+    false
+  )
+
+  module.getOrInsertFunction('strcpy', strcpyType)
+
+  // declare strlen
+  const strlenType = l.FunctionType.get(
+    l.Type.getInt64Ty(context),
+    [l.Type.getInt8PtrTy(context)],
+    false
+  )
+
+  module.getOrInsertFunction('strlen', strlenType)
 
   // declare strcat
   // declare i8* @strcat(i8*, i8*)
-  // const strcatType = l.FunctionType.get(
-  //   l.Type.getInt8PtrTy(context),
-  //   [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
-  //   false
-  // )
-
   const strcatType = l.FunctionType.get(
     l.Type.getInt8PtrTy(context),
     [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
@@ -131,9 +143,13 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
   )
   module.getOrInsertFunction('strcat', strcatType)
 
-  const structType = l.StructType.create(context, 'literal')
   // Type followed by value
+  const structType = l.StructType.create(context, 'literal')
   structType.setBody([l.Type.getDoubleTy(context), l.Type.getDoubleTy(context)])
+
+  // Type followed by value
+  const stringLitType = l.StructType.create(context, 'string_literal')
+  stringLitType.setBody([l.Type.getDoubleTy(context), l.Type.getInt8PtrTy(context)])
 
   // declare display
   buildDisplayFunction(context, module, builder)
