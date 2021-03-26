@@ -13,6 +13,7 @@ import { evalUnaryExpression } from './expression/uop'
 import { evalBinaryStatement } from './expression/bop'
 import { evalLiteralExpression } from './expression/literal'
 import { evalCallExpression } from './expression/call'
+import { evalTernaryExpression } from './expression/ternary'
 
 const statementHandlers = {
   Program: evalProgramStatement,
@@ -28,7 +29,8 @@ const expressionHandlers = {
   BinaryExpression: evalBinaryStatement,
   LogicalExpression: evalBinaryStatement,
   Literal: evalLiteralExpression,
-  CallExpression: evalCallExpression
+  CallExpression: evalCallExpression,
+  ConditionalExpression: evalTernaryExpression
 }
 
 function evaluateExpression(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
