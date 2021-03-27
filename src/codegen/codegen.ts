@@ -8,6 +8,7 @@ import { evalVariableDeclarationExpression } from './statement/assignment'
 import { evalExpressionStatement } from './statement/expression'
 import { evalBlockStatement } from './statement/block'
 import { evalIfStatement } from './statement/ifelse'
+import { evalFunctionStatement } from './statement/function'
 import { evalIdentifierExpression } from './expression/identifier'
 import { evalUnaryExpression } from './expression/uop'
 import { evalBinaryStatement } from './expression/bop'
@@ -20,7 +21,8 @@ const statementHandlers = {
   VariableDeclaration: evalVariableDeclarationExpression,
   ExpressionStatement: evalExpressionStatement,
   BlockStatement: evalBlockStatement,
-  IfStatement: evalIfStatement
+  IfStatement: evalIfStatement,
+  FunctionDeclaration: evalFunctionStatement
 }
 
 const expressionHandlers = {

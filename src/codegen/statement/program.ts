@@ -13,6 +13,7 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
   const programEnv = createNewEnvironment(node.body, undefined, lObj)
 
   node.body.map(x => evaluateStatement(x, programEnv, lObj))
+
   lObj.builder.createRetVoid()
   // functionTeardown(mainFun, lObj)
   try {

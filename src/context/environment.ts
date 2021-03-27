@@ -2,12 +2,10 @@ import { Value } from 'llvm-node'
 import * as l from 'llvm-node'
 
 enum Type {
-  ARRAY,
   BOOLEAN,
   FUNCTION,
   NUMBER,
-  STRING,
-  UNKNOWN
+  STRING
 }
 
 interface Location {
@@ -30,7 +28,7 @@ class Environment {
     this.parent = parent
   }
 
-  static createNewEnvironment(parent?: Environment) {
+  static createNewEnvironment(parent?: Environment) : Environment {
     return new Environment(new Map<string, Record>(), parent)
   }
 

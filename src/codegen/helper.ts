@@ -20,16 +20,26 @@ function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
       if (id.type === 'Identifier') name = id.name
 
       env.addRecord(name!, count)
+    } else if (node.type === 'FunctionDeclaration') {
+      count += 1
+      const decl = (node as es.FunctionDeclaration)
+      env.addRecord(decl.id!.name, count)
     }
   }
   return count
 }
 
 function createEnv(count: number, lObj: LLVMObjs): l.Value {
+
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
   // size + 1 for env parent ptr
   const size = (count + 1) * 8 // 64 bit
   // env registers start with e
-  return malloc(size, lObj, 'e')
+
+  const addr =  malloc(size, lObj, 'e')
+  return lObj.builder.createBitCast(addr, literalStructPtrPtr)
 }
 
 // jump is the number of back pointers to follow in the env
@@ -121,11 +131,40 @@ function getStringTypeCode(lObj: LLVMObjs): l.Value {
   return l.ConstantFP.get(lObj.context, STRING_TYPE_CODE)
 }
 
+function createNewFunctionEnvironment(
+  body: Array<es.Node>,
+  parent: Environment,
+  parentAddress: l.Value, // passed as first arg
+  lObj: LLVMObjs
+) {
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
+  const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
+
+  const env = Environment.createNewEnvironment(parent)
+  const environmentSize = scanOutDir(body, env)
+  const envValue = createEnv(environmentSize, lObj)
+  lObj.builder.createStore(parentAddress, envValue)
+
+
+  const ptr = lObj.builder.createBitCast(envValue, literalStructPtrPtr) // or ptr?
+  env.setPointer(ptr)
+  env.setParent(parent)
+
+  return env
+}
+
 function createNewEnvironment(
   body: Array<es.Node>,
   parent: Environment | undefined,
   lObj: LLVMObjs
 ) {
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
+  const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
+
   const env = Environment.createNewEnvironment(parent)
   const environmentSize = scanOutDir(body, env)
   const envValue = createEnv(environmentSize, lObj)
@@ -133,9 +172,8 @@ function createNewEnvironment(
 
   if (parent) {
     const parentAddr = parent.getPointer()!
-    const framePtr = lObj.builder.createBitCast(envValue, l.PointerType.get(parentAddr.type, 0))
+    const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
     lObj.builder.createStore(parentAddr, framePtr)
-    env.setPointer(envValue)
     env.setParent(parent)
   }
 
@@ -154,5 +192,6 @@ export {
   getStringTypeCode,
   errorWithString,
   errorWithValue,
-  createNewEnvironment
+  createNewEnvironment,
+  createNewFunctionEnvironment
 }
