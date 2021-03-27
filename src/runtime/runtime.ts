@@ -1,4 +1,72 @@
 import * as l from 'llvm-node'
+import { mallocByValue } from '../codegen/helper'
+
+/* CONCAT STRINGS */
+// 1. strlen len both strings
+// 2. malloc new string with enough space
+// 3. copy first string over
+// 4. cat second string to the back
+// to refractor into a function
+function buildStringConcat(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
+  const strType = l.Type.getInt8PtrTy(context)
+
+  const stringConcatFunction = l.FunctionType.get(strType, [strType, strType], false)
+
+  const fun = l.Function.create(
+    stringConcatFunction,
+    l.LinkageTypes.ExternalLinkage,
+    'strconcat',
+    module
+  )
+  const entry = l.BasicBlock.create(context, 'entry', fun)
+  builder.setInsertionPoint(entry)
+
+  const str1 = fun.getArguments()[0]!
+  const str2 = fun.getArguments()[1]!
+
+  const strlenType = l.FunctionType.get(
+    l.Type.getInt64Ty(context),
+    [l.Type.getInt8PtrTy(context)],
+    false
+  )
+  const one64 = l.ConstantInt.get(context, 1, 64)
+  const strLenFun = module.getOrInsertFunction('strlen', strlenType)
+  const len1 = builder.createCall(strLenFun.functionType, strLenFun.callee, [str1])
+  const len2 = builder.createCall(strLenFun.functionType, strLenFun.callee, [str2])
+  const sum = builder.createAdd(len1, len2)
+  const total = builder.createAdd(sum, one64) // +1 for terminator
+
+  const newStrLocation = mallocByValue(total, { context, module, builder })
+
+  const strcpyType = l.FunctionType.get(
+    l.Type.getInt8PtrTy(context),
+    [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
+    false
+  )
+  const strcpy = module.getOrInsertFunction('strcpy', strcpyType)
+
+  // args: dest then src
+  builder.createCall(strcpy.functionType, strcpy.callee, [newStrLocation, str1])
+
+  const strcatType = l.FunctionType.get(
+    l.Type.getInt8PtrTy(context),
+    [l.Type.getInt8PtrTy(context), l.Type.getInt8PtrTy(context)],
+    false
+  )
+
+  const strcat = module.getOrInsertFunction('strcat', strcatType)
+
+  builder.createCall(strcat.functionType, strcat.callee, [newStrLocation, str2])
+
+  builder.createRet(newStrLocation)
+
+  try {
+    l.verifyFunction(fun)
+  } catch (e) {
+    console.error(module.print())
+    throw e
+  }
+}
 
 function buildErrorFunction(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
   /*
@@ -211,6 +279,8 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
   buildDisplayFunction(context, module, builder)
 
   buildErrorFunction(context, module, builder)
+
+  buildStringConcat(context, module, builder)
 }
 
 export { buildRuntime }

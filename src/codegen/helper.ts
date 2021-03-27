@@ -82,6 +82,33 @@ function display(args: l.Value[], env: Environment, lObj: LLVMObjs): l.CallInst 
   )
 }
 
+function errorWithString(str: string, lObj: LLVMObjs) {
+  const value = lObj.builder.createGlobalStringPtr(str)
+  errorWithValue(value, lObj)
+}
+
+function errorWithValue(message: l.Value, lObj: LLVMObjs) {
+  // print error then call exit
+  const errorFunctionType = l.FunctionType.get(
+    l.Type.getVoidTy(lObj.context),
+    [l.Type.getInt8PtrTy(lObj.context)],
+    false
+  )
+
+  const error = lObj.module.getOrInsertFunction('error', errorFunctionType)
+  lObj.builder.createCall(error.functionType, error.callee, [message])
+
+  const exitType = l.FunctionType.get(
+    l.Type.getVoidTy(lObj.context),
+    [l.Type.getInt32Ty(lObj.context)],
+    false
+  )
+
+  const one = l.ConstantInt.get(lObj.context, 1)
+  const exit = lObj.module.getOrInsertFunction('exit', exitType)
+  lObj.builder.createCall(exit.functionType, exit.callee, [one])
+}
+
 function getNumberTypeCode(lObj: LLVMObjs): l.Value {
   return l.ConstantFP.get(lObj.context, NUMBER_TYPE_CODE)
 }
@@ -103,5 +130,7 @@ export {
   display,
   getNumberTypeCode,
   getBooleanTypeCode,
-  getStringTypeCode
+  getStringTypeCode,
+  errorWithString,
+  errorWithValue
 }
