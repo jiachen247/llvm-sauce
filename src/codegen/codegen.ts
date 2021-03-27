@@ -1,6 +1,6 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
-import { Environment, TypeRecord } from '../context/environment'
+import { Environment, Record } from '../context/environment'
 import { buildRuntime } from '../runtime/runtime'
 import { LLVMObjs } from '../types/types'
 import { evalProgramStatement } from './statement/program'
@@ -60,7 +60,8 @@ function eval_toplevel(node: es.Node) {
 
   buildRuntime(context, module, builder)
 
-  const globalEnv = new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
+  // doesnt do anything currently
+  const globalEnv = new Environment(new Map<string, Record>())
   evaluateStatement(node, globalEnv, { context, module, builder })
 
   return module

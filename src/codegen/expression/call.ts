@@ -1,6 +1,6 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
-import { Environment, TypeRecord } from '../../context/environment'
+import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { evaluateExpression } from '../codegen'
 import { display } from '../helper'

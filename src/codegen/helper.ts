@@ -1,7 +1,7 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
-import { Environment, TypeRecord } from '../context/environment'
-import { LLVMObjs, Location } from '../types/types'
+import { Environment, Location } from '../context/environment'
+import { LLVMObjs } from '../types/types'
 import { NUMBER_TYPE_CODE, BOOLEAN_TYPE_CODE, STRING_TYPE_CODE } from './constants'
 
 // function getNumberTypeCode() {
@@ -121,6 +121,27 @@ function getStringTypeCode(lObj: LLVMObjs): l.Value {
   return l.ConstantFP.get(lObj.context, STRING_TYPE_CODE)
 }
 
+function createNewEnvironment(
+  body: Array<es.Node>,
+  parent: Environment | undefined,
+  lObj: LLVMObjs
+) {
+  const env = Environment.createNewEnvironment(parent)
+  const environmentSize = scanOutDir(body, env)
+  const envValue = createEnv(environmentSize, lObj)
+  env.setPointer(envValue)
+
+  if (parent) {
+    const parentAddr = parent.getPointer()!
+    const framePtr = lObj.builder.createBitCast(envValue, l.PointerType.get(parentAddr.type, 0))
+    lObj.builder.createStore(parentAddr, framePtr)
+    env.setPointer(envValue)
+    env.setParent(parent)
+  }
+
+  return env
+}
+
 export {
   scanOutDir,
   createEnv,
@@ -132,5 +153,6 @@ export {
   getBooleanTypeCode,
   getStringTypeCode,
   errorWithString,
-  errorWithValue
+  errorWithValue,
+  createNewEnvironment
 }

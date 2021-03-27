@@ -1,21 +1,16 @@
 import * as es from 'estree'
 import * as l from 'llvm-node'
-import { Environment, TypeRecord } from '../../context/environment'
+import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { scanOutDir, createEnv } from '../helper'
+import { createNewEnvironment } from '../helper'
 import { evaluateStatement } from '../codegen'
 
-function evalProgramStatement(node: es.Program, parent: Environment, lObj: LLVMObjs): l.Value {
+function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs): l.Value {
   const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
   const mainFun = functionSetup(voidFunType, 'main', lObj)
   lObj.function = mainFun
 
-  const programEnv = Environment.createNewEnvironment()
-  const environmentSize = scanOutDir(node.body, programEnv)
-
-  const envValue = createEnv(environmentSize, lObj)
-  programEnv.setParent(parent)
-  programEnv.setFrame(envValue)
+  const programEnv = createNewEnvironment(node.body, undefined, lObj)
 
   node.body.map(x => evaluateStatement(x, programEnv, lObj))
   lObj.builder.createRetVoid()
@@ -39,21 +34,21 @@ function functionSetup(funtype: l.FunctionType, name: string, lObj: LLVMObjs): l
   return fun
 }
 
-// Standard teardown for a function definition.
-// 1. Creates unconditional branch from hoist to next block.
-// 2. Adds return instruction on last block.
-function functionTeardown(fun: l.Function, lObj: LLVMObjs): void {
-  let bbs = fun.getBasicBlocks()
-  lObj.builder.setInsertionPoint(bbs[0])
-  lObj.builder.createBr(bbs[1])
-  lObj.builder.setInsertionPoint(bbs[bbs.length - 1])
-  lObj.builder.createRetVoid()
-  try {
-    l.verifyFunction(fun)
-  } catch (e) {
-    console.error(lObj.module.print())
-    throw e
-  }
-}
+// // Standard teardown for a function definition.
+// // 1. Creates unconditional branch from hoist to next block.
+// // 2. Adds return instruction on last block.
+// function functionTeardown(fun: l.Function, lObj: LLVMObjs): void {
+//   let bbs = fun.getBasicBlocks()
+//   lObj.builder.setInsertionPoint(bbs[0])
+//   lObj.builder.createBr(bbs[1])
+//   lObj.builder.setInsertionPoint(bbs[bbs.length - 1])
+//   lObj.builder.createRetVoid()
+//   try {
+//     l.verifyFunction(fun)
+//   } catch (e) {
+//     console.error(lObj.module.print())
+//     throw e
+//   }
+// }
 
 export { evalProgramStatement }

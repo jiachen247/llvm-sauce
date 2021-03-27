@@ -7,9 +7,4 @@ interface LLVMObjs {
   function?: l.Function // current function
 }
 
-interface Location {
-  jumps: number
-  offset: number
-}
-
-export { LLVMObjs, Location }
+export { LLVMObjs }

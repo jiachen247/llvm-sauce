@@ -6,13 +6,10 @@ import {
   getNumberTypeCode,
   getBooleanTypeCode,
   getStringTypeCode,
-  mallocByValue,
-  display,
   errorWithString
 } from '../helper'
 import { createLiteral, createStringLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
-import { STRING_TYPE_CODE } from '../constants'
 
 function throwRuntimeTypeError(lObj: LLVMObjs) {
   errorWithString('boo type mismatch', lObj)

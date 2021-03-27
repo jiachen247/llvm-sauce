@@ -11,42 +11,37 @@ enum Type {
 }
 
 interface Location {
-  jump: number
+  jumps: number
   offset: number
 }
 
-interface TypeRecord {
+interface Record {
   offset: number
-  // depreceated
-  // value?: Value
   type?: Type
-  // For functions, this records the function signature. [A, B] means sig of A => B.
-  funSig?: [Type[], Type[]]
+  signature?: [Type[], Type[]]
 }
 
 class Environment {
-  private names: Map<string, TypeRecord>
-  private globals: Map<any, Value>
+  private names: Map<string, Record>
   private parent?: Environment
-  private frame?: Value
-  constructor(theNames: Map<string, TypeRecord>, theGlobals: Map<any, Value>) {
+  private ptr?: Value // this stores the actual pointer to the frame
+  constructor(theNames: Map<string, Record>, parent?: Environment) {
     this.names = theNames
-    this.globals = theGlobals
-    this.parent = undefined
+    this.parent = parent
   }
 
-  static createNewEnvironment() {
-    return new Environment(new Map<string, TypeRecord>(), new Map<any, l.Value>())
+  static createNewEnvironment(parent?: Environment) {
+    return new Environment(new Map<string, Record>(), parent)
   }
 
   addRecord(name: string, offset: number) {
-    const record: TypeRecord = {
+    const record: Record = {
       offset: offset
     }
     this.push(name, record)
   }
 
-  push(name: string, tr: TypeRecord): void {
+  push(name: string, tr: Record): void {
     this.names.set(name, tr)
   }
 
@@ -54,7 +49,7 @@ class Environment {
     return this.names.has(name)
   }
 
-  get(name: string): TypeRecord | undefined {
+  get(name: string): Record | undefined {
     return this.names.get(name)
   }
 
@@ -62,17 +57,8 @@ class Environment {
     return this.names.get(name)!.offset
   }
 
-  getGlobal(name: any): Value | undefined {
-    return this.globals?.get(name)
-  }
-
-  addType(name: string, value: TypeRecord): TypeRecord {
+  addType(name: string, value: Record): Record {
     this.names.set(name, value)
-    return value
-  }
-
-  addGlobal(name: any, value: Value): Value {
-    this.globals?.set(name, value)
     return value
   }
 
@@ -84,13 +70,13 @@ class Environment {
     return this.parent
   }
 
-  getFrame() {
-    return this.frame
+  getPointer() {
+    return this.ptr
   }
 
-  setFrame(value: l.Value) {
-    this.frame = value
+  setPointer(value: l.Value) {
+    this.ptr = value
   }
 }
 
-export { Environment, Location, Type, TypeRecord }
+export { Environment, Location, Type, Record }
