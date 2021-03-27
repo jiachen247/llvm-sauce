@@ -6,14 +6,10 @@ import {
   getNumberTypeCode,
   getBooleanTypeCode,
   getStringTypeCode,
-  errorWithString
+  throwRuntimeTypeError
 } from '../helper'
 import { createLiteral, createStringLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
-
-function throwRuntimeTypeError(lObj: LLVMObjs) {
-  errorWithString('boo type mismatch', lObj)
-}
 
 function typecheck(
   expectedLeftType: l.Value,

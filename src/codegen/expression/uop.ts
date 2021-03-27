@@ -6,6 +6,10 @@ import { getNumberTypeCode, getBooleanTypeCode, getStringTypeCode } from '../hel
 import { createLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
 
+function typecheck() {
+  // todo
+}
+
 function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: LLVMObjs): l.Value {
   const NUMBER_CODE = getNumberTypeCode(lObj)
   const BOOLEAN_CODE = getBooleanTypeCode(lObj)

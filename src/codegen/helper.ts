@@ -2,11 +2,7 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment, Location } from '../context/environment'
 import { LLVMObjs } from '../types/types'
-import { NUMBER_TYPE_CODE, BOOLEAN_TYPE_CODE, STRING_TYPE_CODE } from './constants'
-
-// function getNumberTypeCode() {
-
-// }
+import { NUMBER_TYPE_CODE, BOOLEAN_TYPE_CODE, STRING_TYPE_CODE, FUNCTION_TYPE_CODE } from './constants'
 
 function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
   let count = 0
@@ -19,11 +15,11 @@ function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
       let name: string | undefined
       if (id.type === 'Identifier') name = id.name
 
-      env.addRecord(name!, count)
+      env.addRecord(name!)
     } else if (node.type === 'FunctionDeclaration') {
       count += 1
       const decl = (node as es.FunctionDeclaration)
-      env.addRecord(decl.id!.name, count)
+      env.addRecord(decl.id!.name)
     }
   }
   return count
@@ -34,12 +30,12 @@ function createEnv(count: number, lObj: LLVMObjs): l.Value {
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  // size + 1 for env parent ptr
-  const size = (count + 1) * 8 // 64 bit
+  // size + 1 for env parent ptr  (already included in params.length)
+  const size = (count) * 8 // 64 bit
   // env registers start with e
 
-  const addr =  malloc(size, lObj, 'e')
-  return lObj.builder.createBitCast(addr, literalStructPtrPtr)
+  const addr =  malloc(size, lObj, 'env')
+  return lObj.builder.createBitCast(addr, literalStructPtr)
 }
 
 // jump is the number of back pointers to follow in the env
@@ -131,7 +127,12 @@ function getStringTypeCode(lObj: LLVMObjs): l.Value {
   return l.ConstantFP.get(lObj.context, STRING_TYPE_CODE)
 }
 
+function getFunctionTypeCode(lObj: LLVMObjs): l.Value {
+  return l.ConstantFP.get(lObj.context, FUNCTION_TYPE_CODE)
+}
+
 function createNewFunctionEnvironment(
+  params: Array<es.Pattern>,
   body: Array<es.Node>,
   parent: Environment,
   parentAddress: l.Value, // passed as first arg
@@ -140,16 +141,17 @@ function createNewFunctionEnvironment(
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
 
   const env = Environment.createNewEnvironment(parent)
-  const environmentSize = scanOutDir(body, env)
+
+  params.map(param => env.addRecord((param as es.Identifier).name))
+
+  const environmentSize = params.length + scanOutDir(body, env)
   const envValue = createEnv(environmentSize, lObj)
-  lObj.builder.createStore(parentAddress, envValue)
+  const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtr)
+  lObj.builder.createStore(parentAddress, framePtr)
 
-
-  const ptr = lObj.builder.createBitCast(envValue, literalStructPtrPtr) // or ptr?
-  env.setPointer(ptr)
+  env.setPointer(envValue)
   env.setParent(parent)
 
   return env
@@ -163,7 +165,7 @@ function createNewEnvironment(
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
+  // const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
 
   const env = Environment.createNewEnvironment(parent)
   const environmentSize = scanOutDir(body, env)
@@ -172,13 +174,18 @@ function createNewEnvironment(
 
   if (parent) {
     const parentAddr = parent.getPointer()!
-    const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
+    const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtr)
     lObj.builder.createStore(parentAddr, framePtr)
     env.setParent(parent)
   }
 
   return env
 }
+
+function throwRuntimeTypeError(lObj: LLVMObjs) {
+  errorWithString('boo type mismatch', lObj)
+}
+
 
 export {
   scanOutDir,
@@ -190,8 +197,10 @@ export {
   getNumberTypeCode,
   getBooleanTypeCode,
   getStringTypeCode,
+  getFunctionTypeCode,
   errorWithString,
   errorWithValue,
   createNewEnvironment,
-  createNewFunctionEnvironment
+  createNewFunctionEnvironment,
+  throwRuntimeTypeError
 }

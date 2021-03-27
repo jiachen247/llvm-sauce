@@ -275,6 +275,22 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
   const stringLitType = l.StructType.create(context, 'string_literal')
   stringLitType.setBody([l.Type.getDoubleTy(context), l.Type.getInt8PtrTy(context)])
 
+  const litPtr = l.PointerType.get(structType, 0)
+
+  const genericFunctionType = l.FunctionType.get(
+    litPtr,
+    [litPtr],
+    true
+  )
+
+  const functionLiteral = l.StructType.create(context, 'function_literal')
+
+  functionLiteral.setBody([
+    l.Type.getDoubleTy(context), 
+    l.PointerType.get(structType, 0), // enclosing env
+    l.PointerType.get(genericFunctionType, 0) // function pointer
+  ])
+
   // declare display
   buildDisplayFunction(context, module, builder)
 

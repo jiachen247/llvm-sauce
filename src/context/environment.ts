@@ -23,18 +23,20 @@ class Environment {
   private names: Map<string, Record>
   private parent?: Environment
   private ptr?: Value // this stores the actual pointer to the frame
+  private counter : number
   constructor(theNames: Map<string, Record>, parent?: Environment) {
     this.names = theNames
     this.parent = parent
+    this.counter = 0
   }
 
   static createNewEnvironment(parent?: Environment) : Environment {
     return new Environment(new Map<string, Record>(), parent)
   }
 
-  addRecord(name: string, offset: number) {
+  addRecord(name: string) {
     const record: Record = {
-      offset: offset
+      offset: this.getNextOffset()
     }
     this.push(name, record)
   }
@@ -74,6 +76,11 @@ class Environment {
 
   setPointer(value: l.Value) {
     this.ptr = value
+  }
+
+  getNextOffset() {
+    this.counter += 1
+    return this.counter
   }
 }
 
