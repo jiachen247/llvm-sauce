@@ -99,37 +99,34 @@ entry:
 define i32 @main() {
 entry:
   %env = call i8* @malloc(i32 0)
-  %0 = bitcast i8* %env to %literal*
+  %0 = bitcast i8* %env to %literal**
   %env1 = call i8* @malloc(i32 8)
-  %1 = bitcast i8* %env1 to %literal*
-  %2 = bitcast %literal* %1 to %literal**
-  store %literal* %0, %literal** %2
+  %1 = bitcast i8* %env1 to %literal**
+  %2 = bitcast %literal** %1 to %literal***
+  store %literal** %0, %literal*** %2
   %3 = call i8* @malloc(i32 16)
   %4 = bitcast i8* %3 to %literal*
   %5 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 0
   %6 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 1
   store double 1.000000e+00, double* %5
   store double 1.000000e+00, double* %6
-  %7 = bitcast %literal* %1 to %literal**
-  %8 = getelementptr inbounds %literal*, %literal** %7, i32 1
-  store %literal* %4, %literal** %8
+  %7 = getelementptr inbounds %literal*, %literal** %1, i32 1
+  store %literal* %4, %literal** %7
   %env2 = call i8* @malloc(i32 8)
-  %9 = bitcast i8* %env2 to %literal*
-  %10 = bitcast %literal* %9 to %literal**
-  store %literal* %1, %literal** %10
-  %11 = call i8* @malloc(i32 16)
-  %12 = bitcast i8* %11 to %literal*
-  %13 = getelementptr inbounds %literal, %literal* %12, i32 0, i32 0
-  %14 = getelementptr inbounds %literal, %literal* %12, i32 0, i32 1
-  store double 1.000000e+00, double* %13
-  store double 2.000000e+00, double* %14
-  %15 = bitcast %literal* %9 to %literal**
-  %16 = getelementptr inbounds %literal*, %literal** %15, i32 1
-  store %literal* %12, %literal** %16
-  %17 = bitcast %literal* %1 to %literal**
-  %18 = getelementptr inbounds %literal*, %literal** %17, i32 1
-  %19 = load %literal*, %literal** %18
-  call void @display(%literal* %19)
+  %8 = bitcast i8* %env2 to %literal**
+  %9 = bitcast %literal** %8 to %literal***
+  store %literal** %1, %literal*** %9
+  %10 = call i8* @malloc(i32 16)
+  %11 = bitcast i8* %10 to %literal*
+  %12 = getelementptr inbounds %literal, %literal* %11, i32 0, i32 0
+  %13 = getelementptr inbounds %literal, %literal* %11, i32 0, i32 1
+  store double 1.000000e+00, double* %12
+  store double 2.000000e+00, double* %13
+  %14 = getelementptr inbounds %literal*, %literal** %8, i32 1
+  store %literal* %11, %literal** %14
+  %15 = getelementptr inbounds %literal*, %literal** %1, i32 1
+  %16 = load %literal*, %literal** %15
+  call void @display(%literal* %16)
   ret i32 0
 }
 

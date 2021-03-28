@@ -10,6 +10,7 @@ source_filename = "module"
 @format_function = private unnamed_addr constant [17 x i8] c"function object\0A\00", align 1
 @format_undef = private unnamed_addr constant [11 x i8] c"undefined\0A\00", align 1
 @format_error = private unnamed_addr constant [13 x i8] c"error: \22%s\22\0A\00", align 1
+@0 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 
 declare i8* @malloc(i32)
 
@@ -99,27 +100,38 @@ entry:
 define i32 @main() {
 entry:
   %env = call i8* @malloc(i32 0)
-  %0 = bitcast i8* %env to %literal*
+  %0 = bitcast i8* %env to %literal**
   %env1 = call i8* @malloc(i32 0)
-  %1 = bitcast i8* %env1 to %literal*
-  %2 = bitcast %literal* %1 to %literal**
-  store %literal* %0, %literal** %2
+  %1 = bitcast i8* %env1 to %literal**
+  %2 = bitcast %literal** %1 to %literal***
+  store %literal** %0, %literal*** %2
   %3 = call i8* @malloc(i32 16)
   %4 = bitcast i8* %3 to %literal*
   %5 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 0
   %6 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 1
   store double 1.000000e+00, double* %5
   store double 1.000000e+00, double* %6
-  %7 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 1
-  %8 = load double, double* %7
-  %9 = fneg double %8
-  %10 = call i8* @malloc(i32 16)
-  %11 = bitcast i8* %10 to %literal*
-  %12 = getelementptr inbounds %literal, %literal* %11, i32 0, i32 0
-  %13 = getelementptr inbounds %literal, %literal* %11, i32 0, i32 1
-  store double 1.000000e+00, double* %12
-  store double %9, double* %13
-  call void @display(%literal* %11)
+  %7 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 0
+  %8 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 1
+  %9 = load double, double* %7
+  %10 = load double, double* %8
+  %11 = fcmp oeq double %9, 1.000000e+00
+  br i1 %11, label %tc.valid, label %tc.error
+
+tc.error:                                         ; preds = %entry
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
+  call void @exit(i32 1)
+  br label %tc.valid
+
+tc.valid:                                         ; preds = %tc.error, %entry
+  %12 = fneg double %10
+  %13 = call i8* @malloc(i32 16)
+  %14 = bitcast i8* %13 to %literal*
+  %15 = getelementptr inbounds %literal, %literal* %14, i32 0, i32 0
+  %16 = getelementptr inbounds %literal, %literal* %14, i32 0, i32 1
+  store double 1.000000e+00, double* %15
+  store double %12, double* %16
+  call void @display(%literal* %14)
   ret i32 0
 }
 

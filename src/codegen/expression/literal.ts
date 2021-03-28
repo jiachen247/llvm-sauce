@@ -85,7 +85,8 @@ function createStringLiteral(str: l.Value, lObj: LLVMObjs): l.Value {
 function createFunctionLiteral(fun: l.Function, env: l.Value, lObj: LLVMObjs): l.Value {
   const code = getFunctionTypeCode(lObj)
 
-  const functionLiteralPtr = l.PointerType.get(lObj.module.getTypeByName('function_literal')!, 0)
+  const functionLiteralType = lObj.module.getTypeByName('function_literal')!
+  const functionLiteralPtr = l.PointerType.get(functionLiteralType, 0)
   const literalStructPtr = l.PointerType.get(lObj.module.getTypeByName('literal')!, 0)
 
   const raw: l.Value = malloc(SIZE_OF_DATA_NODE, lObj)
@@ -95,19 +96,13 @@ function createFunctionLiteral(fun: l.Function, env: l.Value, lObj: LLVMObjs): l
   const two = l.ConstantInt.get(lObj.context, 2)
 
   const literal = lObj.builder.createBitCast(raw, functionLiteralPtr)
-  const typePtr = lObj.builder.createInBoundsGEP(literal, [zero, zero])
-  const envPtr = lObj.builder.createInBoundsGEP(literal, [zero, one])
-  const funPtr = lObj.builder.createInBoundsGEP(literal, [zero, two])
+  const typePtr = lObj.builder.createInBoundsGEP(functionLiteralType, literal, [zero, zero])
+  const envPtr = lObj.builder.createInBoundsGEP(functionLiteralType, literal, [zero, one])
+  const funPtr = lObj.builder.createInBoundsGEP(functionLiteralType, literal, [zero, two])
 
   lObj.builder.createStore(code, typePtr, false)
   lObj.builder.createStore(env, envPtr, false)
   lObj.builder.createStore(fun, funPtr, false)
-
-  /*
-    l.Type.getDoubleTy(context), 
-    l.PointerType.get(structType, 0), // enclosing env
-    l.PointerType.get(genericFunctionType, 0) // function pointer
-  */
 
   return lObj.builder.createBitCast(literal, literalStructPtr)
 }

@@ -99,11 +99,11 @@ entry:
 define i32 @main() {
 entry:
   %env = call i8* @malloc(i32 0)
-  %0 = bitcast i8* %env to %literal*
+  %0 = bitcast i8* %env to %literal**
   %env1 = call i8* @malloc(i32 8)
-  %1 = bitcast i8* %env1 to %literal*
-  %2 = bitcast %literal* %1 to %literal**
-  store %literal* %0, %literal** %2
+  %1 = bitcast i8* %env1 to %literal**
+  %2 = bitcast %literal** %1 to %literal***
+  store %literal** %0, %literal*** %2
   %3 = call i8* @malloc(i32 16)
   %4 = bitcast i8* %3 to %literal*
   %5 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 0
@@ -135,13 +135,11 @@ tenary.false:                                     ; preds = %entry
 
 if.end:                                           ; preds = %tenary.false, %tenary.true
   %18 = phi %literal* [ %11, %tenary.true ], [ %15, %tenary.false ]
-  %19 = bitcast %literal* %1 to %literal**
-  %20 = getelementptr inbounds %literal*, %literal** %19, i32 1
-  store %literal* %18, %literal** %20
-  %21 = bitcast %literal* %1 to %literal**
-  %22 = getelementptr inbounds %literal*, %literal** %21, i32 1
-  %23 = load %literal*, %literal** %22
-  call void @display(%literal* %23)
+  %19 = getelementptr inbounds %literal*, %literal** %1, i32 1
+  store %literal* %18, %literal** %19
+  %20 = getelementptr inbounds %literal*, %literal** %1, i32 1
+  %21 = load %literal*, %literal** %20
+  call void @display(%literal* %21)
   ret i32 0
 }
 

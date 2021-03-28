@@ -99,11 +99,11 @@ entry:
 define i32 @main() {
 entry:
   %env = call i8* @malloc(i32 0)
-  %0 = bitcast i8* %env to %literal*
+  %0 = bitcast i8* %env to %literal**
   %env1 = call i8* @malloc(i32 0)
-  %1 = bitcast i8* %env1 to %literal*
-  %2 = bitcast %literal* %1 to %literal**
-  store %literal* %0, %literal** %2
+  %1 = bitcast i8* %env1 to %literal**
+  %2 = bitcast %literal** %1 to %literal***
+  store %literal** %0, %literal*** %2
   %3 = call i8* @malloc(i32 16)
   %4 = bitcast i8* %3 to %literal*
   %5 = getelementptr inbounds %literal, %literal* %4, i32 0, i32 0
@@ -117,9 +117,9 @@ entry:
 
 if.true:                                          ; preds = %entry
   %env2 = call i8* @malloc(i32 0)
-  %10 = bitcast i8* %env2 to %literal*
-  %11 = bitcast %literal* %10 to %literal**
-  store %literal* %1, %literal** %11
+  %10 = bitcast i8* %env2 to %literal**
+  %11 = bitcast %literal** %10 to %literal***
+  store %literal** %1, %literal*** %11
   %12 = call i8* @malloc(i32 16)
   %13 = bitcast i8* %12 to %literal*
   %14 = getelementptr inbounds %literal, %literal* %13, i32 0, i32 0
@@ -131,9 +131,9 @@ if.true:                                          ; preds = %entry
 
 if.false:                                         ; preds = %entry
   %env3 = call i8* @malloc(i32 0)
-  %16 = bitcast i8* %env3 to %literal*
-  %17 = bitcast %literal* %16 to %literal**
-  store %literal* %1, %literal** %17
+  %16 = bitcast i8* %env3 to %literal**
+  %17 = bitcast %literal** %16 to %literal***
+  store %literal** %1, %literal*** %17
   %18 = call i8* @malloc(i32 16)
   %19 = bitcast i8* %18 to %literal*
   %20 = getelementptr inbounds %literal, %literal* %19, i32 0, i32 0

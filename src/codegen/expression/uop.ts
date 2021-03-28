@@ -2,7 +2,12 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { getNumberTypeCode, getBooleanTypeCode, getStringTypeCode, throwRuntimeTypeError } from '../helper'
+import {
+  getNumberTypeCode,
+  getBooleanTypeCode,
+  getStringTypeCode,
+  throwRuntimeTypeError
+} from '../helper'
 import { createLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
 
@@ -12,7 +17,6 @@ function typecheck(actual: l.Value, expected: l.Value, lObj: LLVMObjs) {
 
   const isValid = lObj.builder.createFCmpOEQ(actual, expected)
   lObj.builder.createCondBr(isValid, valid, error)
-  
 
   lObj.builder.setInsertionPoint(error)
   throwRuntimeTypeError(lObj)

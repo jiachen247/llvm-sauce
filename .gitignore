@@ -9,3 +9,5 @@ tsconfig.tsbuildinfo
 test-report.html
 input
 output
+*.s
+*.out

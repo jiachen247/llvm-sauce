@@ -308,14 +308,15 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
 
   const litPtr = l.PointerType.get(structType, 0)
   const litPtrPtr = l.PointerType.get(litPtr, 0)
+  const litPtrPtrPtr = l.PointerType.get(litPtrPtr, 0)
 
-  const genericFunctionType = l.FunctionType.get(litPtr, [litPtr, litPtrPtr], false)
+  const genericFunctionType = l.FunctionType.get(litPtr, [litPtrPtr, litPtrPtr], false)
 
   const functionLiteral = l.StructType.create(context, 'function_literal')
 
   functionLiteral.setBody([
     l.Type.getDoubleTy(context),
-    l.PointerType.get(structType, 0), // enclosing env
+    litPtrPtr, // enclosing env
     l.PointerType.get(genericFunctionType, 0) // function pointer
   ])
 

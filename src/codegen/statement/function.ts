@@ -23,7 +23,7 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
 
   const genericFunctionType = l.FunctionType.get(
     literalStructPtr,
-    [literalStructPtr, literalStructPtrPtr],
+    [literalStructPtrPtr, literalStructPtrPtr],
     false
   )
 
@@ -39,13 +39,17 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
   const entry = l.BasicBlock.create(lObj.context, 'f.entry', fun)
   lObj.builder.setInsertionPoint(entry)
 
-  const parentAddress = fun.getArguments()[0]! // first arg
-  const env = createNewFunctionEnvironment(node.params, node.body.body, parent, parentAddress, lObj)
+  const enclosingFrame = fun.getArguments()[0]! // first arg
+  const paramsAddr = fun.getArguments()[1]!
 
-  // NEED TO CREATE NEW ENV FROM
-  const enc = fun.getArguments()[0]! // do i even need this?
-  const arg1 = fun.getArguments()[1]!
-  const params = lObj.builder.createBitCast(arg1, literalStructPtrPtr)
+  const env = createNewFunctionEnvironment(
+    node.params,
+    node.body.body,
+    parent,
+    enclosingFrame,
+    lObj
+  )
+  const params = lObj.builder.createBitCast(paramsAddr, literalStructPtrPtr)
   const f = lObj.builder.createBitCast(env.getPointer()!, literalStructPtrPtr)
   let base, value, target
   for (let i = 0; i < numberOfParameters; i++) {

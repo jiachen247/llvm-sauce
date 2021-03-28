@@ -40,7 +40,7 @@ function createEnv(count: number, lObj: LLVMObjs): l.Value {
   // env registers start with e
 
   const addr = malloc(size, lObj, 'env')
-  return lObj.builder.createBitCast(addr, literalStructPtr)
+  return lObj.builder.createBitCast(addr, literalStructPtrPtr)
 }
 
 // jump is the number of back pointers to follow in the env
@@ -149,14 +149,16 @@ function createNewFunctionEnvironment(
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
+  const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
 
   const env = Environment.createNewEnvironment(parent)
 
   params.map(param => env.addRecord((param as es.Identifier).name))
 
-  const environmentSize = params.length + scanOutDir(body, env)
+  // +1 for back / parent env pointer as first entry
+  const environmentSize = params.length + scanOutDir(body, env) + 1
   const envValue = createEnv(environmentSize, lObj)
-  const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtr)
+  const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
   lObj.builder.createStore(parentAddress, framePtr)
 
   env.setPointer(envValue)
@@ -173,7 +175,7 @@ function createNewEnvironment(
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  // const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
+  const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
 
   const env = Environment.createNewEnvironment(parent)
   const environmentSize = scanOutDir(body, env)
@@ -182,7 +184,7 @@ function createNewEnvironment(
 
   if (parent) {
     const parentAddr = parent.getPointer()!
-    const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtr)
+    const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
     lObj.builder.createStore(parentAddr, framePtr)
     env.setParent(parent)
   }
