@@ -1,5 +1,10 @@
 function f() {
-    display("yay");
+    function g() {
+        return 100;
+    }
+
+    return g();
 }
-f();
-//"yay"
+
+display(f());
+//100.000000

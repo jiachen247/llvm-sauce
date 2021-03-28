@@ -39,12 +39,6 @@ function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLV
   let fun
 
   if (!built) {
-    const fun = lObj.module.getFunction(formatFunctionName(callee))
-
-    if (!fun) {
-      throw new Error('Undefined function ' + callee)
-    }
-
     const loc = lookupEnv(callee, env)
     let frame = env.getPointer()! // frame enclosing function eyeballs
 
