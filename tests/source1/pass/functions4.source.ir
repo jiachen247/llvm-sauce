@@ -99,9 +99,9 @@ entry:
 
 define i32 @main() {
 entry:
-  %env = call i8* @malloc(i32 0)
+  %env = call i8* @malloc(i32 8)
   %0 = bitcast i8* %env to %literal**
-  %env1 = call i8* @malloc(i32 8)
+  %env1 = call i8* @malloc(i32 16)
   %1 = bitcast i8* %env1 to %literal**
   %2 = bitcast %literal** %1 to %literal***
   store %literal** %0, %literal*** %2
@@ -128,7 +128,7 @@ f.entry:
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
   store %literal** %0, %literal*** %3
-  %env1 = call i8* @malloc(i32 0)
+  %env1 = call i8* @malloc(i32 8)
   %4 = bitcast i8* %env1 to %literal**
   %5 = bitcast %literal** %4 to %literal***
   store %literal** %2, %literal*** %5

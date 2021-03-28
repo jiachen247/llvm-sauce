@@ -98,9 +98,9 @@ entry:
 
 define i32 @main() {
 entry:
-  %env = call i8* @malloc(i32 0)
+  %env = call i8* @malloc(i32 8)
   %0 = bitcast i8* %env to %literal**
-  %env1 = call i8* @malloc(i32 0)
+  %env1 = call i8* @malloc(i32 8)
   %1 = bitcast i8* %env1 to %literal**
   %2 = bitcast %literal** %1 to %literal***
   store %literal** %0, %literal*** %2
@@ -116,7 +116,7 @@ entry:
   br i1 %9, label %if.true, label %if.false
 
 if.true:                                          ; preds = %entry
-  %env2 = call i8* @malloc(i32 0)
+  %env2 = call i8* @malloc(i32 8)
   %10 = bitcast i8* %env2 to %literal**
   %11 = bitcast %literal** %10 to %literal***
   store %literal** %1, %literal*** %11
@@ -145,7 +145,7 @@ if.end:                                           ; preds = %if.end5, %if.true
   ret i32 0
 
 if.true3:                                         ; preds = %if.false
-  %env6 = call i8* @malloc(i32 0)
+  %env6 = call i8* @malloc(i32 8)
   %23 = bitcast i8* %env6 to %literal**
   %24 = bitcast %literal** %23 to %literal***
   store %literal** %1, %literal*** %24
@@ -174,7 +174,7 @@ if.end5:                                          ; preds = %if.end9, %if.true3
   br label %if.end
 
 if.true7:                                         ; preds = %if.false4
-  %env10 = call i8* @malloc(i32 0)
+  %env10 = call i8* @malloc(i32 8)
   %36 = bitcast i8* %env10 to %literal**
   %37 = bitcast %literal** %36 to %literal***
   store %literal** %1, %literal*** %37
@@ -188,7 +188,7 @@ if.true7:                                         ; preds = %if.false4
   br label %if.end9
 
 if.false8:                                        ; preds = %if.false4
-  %env11 = call i8* @malloc(i32 0)
+  %env11 = call i8* @malloc(i32 8)
   %42 = bitcast i8* %env11 to %literal**
   %43 = bitcast %literal** %42 to %literal***
   store %literal** %1, %literal*** %43

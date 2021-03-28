@@ -98,9 +98,9 @@ entry:
 
 define i32 @main() {
 entry:
-  %env = call i8* @malloc(i32 0)
+  %env = call i8* @malloc(i32 8)
   %0 = bitcast i8* %env to %literal**
-  %env1 = call i8* @malloc(i32 8)
+  %env1 = call i8* @malloc(i32 16)
   %1 = bitcast i8* %env1 to %literal**
   %2 = bitcast %literal** %1 to %literal***
   store %literal** %0, %literal*** %2
@@ -112,7 +112,7 @@ entry:
   store double 1.000000e+00, double* %6
   %7 = getelementptr inbounds %literal*, %literal** %1, i32 1
   store %literal* %4, %literal** %7
-  %env2 = call i8* @malloc(i32 8)
+  %env2 = call i8* @malloc(i32 16)
   %8 = bitcast i8* %env2 to %literal**
   %9 = bitcast %literal** %8 to %literal***
   store %literal** %1, %literal*** %9

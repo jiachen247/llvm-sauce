@@ -101,9 +101,9 @@ entry:
 
 define i32 @main() {
 entry:
-  %env = call i8* @malloc(i32 0)
+  %env = call i8* @malloc(i32 8)
   %0 = bitcast i8* %env to %literal**
-  %env1 = call i8* @malloc(i32 0)
+  %env1 = call i8* @malloc(i32 8)
   %1 = bitcast i8* %env1 to %literal**
   %2 = bitcast %literal** %1 to %literal***
   store %literal** %0, %literal*** %2
@@ -219,7 +219,7 @@ tc.valid:                                         ; preds = %tc.error, %tc.next
   br i1 %65, label %if.true, label %if.false
 
 if.true:                                          ; preds = %tc.valid
-  %env2 = call i8* @malloc(i32 0)
+  %env2 = call i8* @malloc(i32 8)
   %66 = bitcast i8* %env2 to %literal**
   %67 = bitcast %literal** %66 to %literal***
   store %literal** %1, %literal*** %67
@@ -233,7 +233,7 @@ if.true:                                          ; preds = %tc.valid
   br label %if.end
 
 if.false:                                         ; preds = %tc.valid
-  %env3 = call i8* @malloc(i32 0)
+  %env3 = call i8* @malloc(i32 8)
   %72 = bitcast i8* %env3 to %literal**
   %73 = bitcast %literal** %72 to %literal***
   store %literal** %1, %literal*** %73

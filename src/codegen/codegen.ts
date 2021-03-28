@@ -8,7 +8,7 @@ import { evalVariableDeclarationExpression } from './statement/assignment'
 import { evalExpressionStatement } from './statement/expression'
 import { evalBlockStatement } from './statement/block'
 import { evalIfStatement } from './statement/ifelse'
-import { evalFunctionStatement } from './statement/function'
+import { evalFunctionStatement, evalArrowFunctionExpression } from './statement/function'
 import { evalReturnStatement } from './statement/return'
 import { evalIdentifierExpression } from './expression/identifier'
 import { evalUnaryExpression } from './expression/uop'
@@ -34,7 +34,8 @@ const expressionHandlers = {
   LogicalExpression: evalBinaryStatement,
   Literal: evalLiteralExpression,
   CallExpression: evalCallExpression,
-  ConditionalExpression: evalTernaryExpression
+  ConditionalExpression: evalTernaryExpression,
+  ArrowFunctionExpression: evalArrowFunctionExpression
 }
 
 function evaluateExpression(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {

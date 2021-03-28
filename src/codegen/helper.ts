@@ -35,8 +35,9 @@ function createEnv(count: number, lObj: LLVMObjs): l.Value {
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
+  
   // size + 1 for env parent ptr  (already included in params.length)
-  const size = count * 8 // 64 bit
+  const size = (count + 1) * 8 // 64 bit
   // env registers start with e
 
   const addr = malloc(size, lObj, 'env')
@@ -156,7 +157,7 @@ function createNewFunctionEnvironment(
   params.map(param => env.addRecord((param as es.Identifier).name))
 
   // +1 for back / parent env pointer as first entry
-  const environmentSize = params.length + scanOutDir(body, env) + 1
+  const environmentSize = params.length + scanOutDir(body, env)
   const envValue = createEnv(environmentSize, lObj)
   const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
   lObj.builder.createStore(parentAddress, framePtr)
