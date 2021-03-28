@@ -6,7 +6,8 @@ import {
   NUMBER_TYPE_CODE,
   BOOLEAN_TYPE_CODE,
   STRING_TYPE_CODE,
-  FUNCTION_TYPE_CODE
+  FUNCTION_TYPE_CODE,
+  UNDEFINED_TYPE_CODE
 } from './constants'
 
 function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
@@ -135,6 +136,10 @@ function getFunctionTypeCode(lObj: LLVMObjs): l.Value {
   return l.ConstantFP.get(lObj.context, FUNCTION_TYPE_CODE)
 }
 
+function getUndefinedCode(lObj: LLVMObjs): l.Value {
+  return l.ConstantFP.get(lObj.context, UNDEFINED_TYPE_CODE)
+}
+
 function createNewFunctionEnvironment(
   params: Array<es.Pattern>,
   body: Array<es.Node>,
@@ -223,6 +228,7 @@ export {
   getBooleanTypeCode,
   getStringTypeCode,
   getFunctionTypeCode,
+  getUndefinedCode,
   errorWithString,
   errorWithValue,
   createNewEnvironment,

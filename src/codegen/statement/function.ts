@@ -2,7 +2,7 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { createLiteral, createFunctionLiteral } from '../expression/literal'
+import { createUndefinedLiteral, createFunctionLiteral } from '../expression/literal'
 import { createNewFunctionEnvironment, getNumberTypeCode, lookupEnv } from '../helper'
 import { evalBlockStatement } from '../statement/block'
 
@@ -60,10 +60,11 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
   }
 
   evalBlockStatement(node.body, env, lObj)
-  const one = l.ConstantFP.get(lObj.context, 1)
-  const null1 = createLiteral(one, getNumberTypeCode(lObj), lObj)
 
-  lObj.builder.createRet(null1) // dont know if this is allowed
+  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
+    const udef = createUndefinedLiteral(lObj)
+    lObj.builder.createRet(udef)
+  }
 
   try {
     l.verifyFunction(fun)

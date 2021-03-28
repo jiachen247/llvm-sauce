@@ -1,4 +1,5 @@
 import * as l from 'llvm-node'
+import { FUNCTION_TYPE_CODE, UNDEFINED_TYPE_CODE } from '../codegen/constants'
 import { mallocByValue } from '../codegen/helper'
 
 /* CONCAT STRINGS */
@@ -143,11 +144,15 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
 
   const entry = l.BasicBlock.create(context, 'entry', fun)
   const tmpBlock = l.BasicBlock.create(context, 'tmp', fun)
+  const tmp1Block = l.BasicBlock.create(context, 'tmp1', fun)
+  const tmp2Block = l.BasicBlock.create(context, 'tmp2', fun)
   const displayNumberBlock = l.BasicBlock.create(context, 'display_number', fun)
   const displayBooleanBlock = l.BasicBlock.create(context, 'display_boolean', fun)
   const printTrueBlock = l.BasicBlock.create(context, 'print_true', fun)
   const printFalseBlock = l.BasicBlock.create(context, 'print_false', fun)
   const displayStringBlock = l.BasicBlock.create(context, 'display_string', fun)
+  const displayFunctionBlock = l.BasicBlock.create(context, 'display_function', fun)
+  const displayUndefBlock = l.BasicBlock.create(context, 'display_undefined', fun)
   const endBlock = l.BasicBlock.create(context, 'end', fun)
 
   builder.setInsertionPoint(entry)
@@ -156,6 +161,8 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   const format_true = builder.createGlobalString('true\n', 'format_true')
   const format_false = builder.createGlobalString('false\n', 'format_false')
   const format_string = builder.createGlobalString('"%s"\n', 'format_string')
+  const format_function = builder.createGlobalString('function object\n', 'format_function')
+  const format_undefined = builder.createGlobalString('undefined\n', 'format_undef')
 
   const zero = l.ConstantInt.get(context, 0)
   const one = l.ConstantInt.get(context, 1)
@@ -168,16 +175,28 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   const type = builder.createLoad(typePtr)
   const value = builder.createLoad(valuePtr)
 
-  // const NUMBER_CODE = l.ConstantFP.get(context, 1)
+  // can get from helper
+  const NUMBER_CODE = l.ConstantFP.get(context, 1)
   const BOOLEAN_CODE = l.ConstantFP.get(context, 2)
   const STRING_CODE = l.ConstantFP.get(context, 3)
+  const FUNCTION_CODE = l.ConstantFP.get(context, 4)
+  const UNDEFINED_CODE = l.ConstantFP.get(context, 5)
 
   const isBoolean = builder.createFCmpOEQ(type, BOOLEAN_CODE)
   builder.createCondBr(isBoolean, displayBooleanBlock, tmpBlock)
 
   builder.setInsertionPoint(tmpBlock)
   const isString = builder.createFCmpOEQ(type, STRING_CODE)
-  builder.createCondBr(isString, displayStringBlock, displayNumberBlock)
+  builder.createCondBr(isString, displayStringBlock, tmp1Block)
+
+  builder.setInsertionPoint(tmp1Block)
+  const isFunction = builder.createFCmpOEQ(type, FUNCTION_CODE)
+  builder.createCondBr(isFunction, displayFunctionBlock, tmp2Block)
+
+  builder.setInsertionPoint(tmp2Block)
+  const isUndefined = builder.createFCmpOEQ(type, UNDEFINED_CODE)
+  builder.createCondBr(isUndefined, displayUndefBlock, displayNumberBlock)
+
 
   /* DISPLAY NUMBER */
   builder.setInsertionPoint(displayNumberBlock)
@@ -205,6 +224,18 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   const str = builder.createBitCast(value, intType)
   format = builder.createBitCast(format_string, l.Type.getInt8PtrTy(context))
   builder.createCall(printf.functionType, printf.callee, [format, str])
+  builder.createBr(endBlock)
+
+  /* DISPLAY FUNCTION */
+  builder.setInsertionPoint(displayFunctionBlock)
+  format = builder.createBitCast(format_function, l.Type.getInt8PtrTy(context))
+  builder.createCall(printf.functionType, printf.callee, [format])
+  builder.createBr(endBlock)
+
+  /* DISPLAY UNDEFINED */
+  builder.setInsertionPoint(displayUndefBlock)
+  format = builder.createBitCast(format_undefined, l.Type.getInt8PtrTy(context))
+  builder.createCall(printf.functionType, printf.callee, [format])
   builder.createBr(endBlock)
 
   builder.setInsertionPoint(endBlock)

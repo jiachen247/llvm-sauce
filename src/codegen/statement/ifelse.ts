@@ -27,11 +27,17 @@ function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMOb
 
   lObj.builder.setInsertionPoint(consequentBlock)
   evaluateStatement(node.consequent, parent, lObj)
-  lObj.builder.createBr(endBlock)
+
+  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
+    lObj.builder.createBr(endBlock)
+  }
+  
 
   lObj.builder.setInsertionPoint(alternativeBlock)
   evaluateStatement(node.alternate!, parent, lObj)
-  lObj.builder.createBr(endBlock)
+  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
+    lObj.builder.createBr(endBlock)
+  }
 
   lObj.builder.setInsertionPoint(endBlock)
 }

@@ -10,7 +10,12 @@ function evalBlockStatement(node: es.Node, parent: Environment, lObj: LLVMObjs) 
 
   const env = createNewEnvironment(body, parent, lObj)
 
-  body.map(x => evaluateStatement(x, env, lObj))
+  for (const statement of body) {
+    evaluateStatement(statement, env, lObj)
+    if (statement.type === 'ReturnStatement') {
+      return
+    }
+  }
 }
 
 export { evalBlockStatement }

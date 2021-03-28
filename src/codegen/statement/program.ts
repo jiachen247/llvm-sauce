@@ -12,10 +12,15 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
 
   const programEnv = createNewEnvironment(node.body, undefined, lObj)
 
-  node.body.map(x => evaluateStatement(x, programEnv, lObj))
+  for (const statement of node.body) {
+    evaluateStatement(statement, programEnv, lObj)
+    if (statement.type === 'ReturnStatement') {
+      break
+    }
+  }
 
   lObj.builder.createRetVoid()
-  // functionTeardown(mainFun, lObj)
+
   try {
     l.verifyFunction(mainFun)
   } catch (e) {

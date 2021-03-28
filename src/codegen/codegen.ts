@@ -9,6 +9,7 @@ import { evalExpressionStatement } from './statement/expression'
 import { evalBlockStatement } from './statement/block'
 import { evalIfStatement } from './statement/ifelse'
 import { evalFunctionStatement } from './statement/function'
+import { evalReturnStatement } from './statement/return'
 import { evalIdentifierExpression } from './expression/identifier'
 import { evalUnaryExpression } from './expression/uop'
 import { evalBinaryStatement } from './expression/bop'
@@ -22,7 +23,8 @@ const statementHandlers = {
   ExpressionStatement: evalExpressionStatement,
   BlockStatement: evalBlockStatement,
   IfStatement: evalIfStatement,
-  FunctionDeclaration: evalFunctionStatement
+  FunctionDeclaration: evalFunctionStatement,
+  ReturnStatement: evalReturnStatement
 }
 
 const expressionHandlers = {

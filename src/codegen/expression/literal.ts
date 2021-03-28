@@ -7,7 +7,8 @@ import {
   getNumberTypeCode,
   getBooleanTypeCode,
   getStringTypeCode,
-  getFunctionTypeCode
+  getFunctionTypeCode,
+  getUndefinedCode
 } from '../helper'
 
 const SIZE_OF_DATA_NODE = 16 // jiachen is very generous
@@ -35,6 +36,12 @@ function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
   lObj.builder.createStore(value, valuePtr, false)
 
   return literal
+}
+
+function createUndefinedLiteral(lObj: LLVMObjs) {
+  const code = getUndefinedCode(lObj)
+  const zero = l.ConstantFP.get(lObj.context, 0)
+  return createLiteral(zero, code, lObj)
 }
 
 function createNumberLiteral(n: number, lObj: LLVMObjs): l.Value {
@@ -142,4 +149,10 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
   }
 }
 
-export { evalLiteralExpression, createLiteral, createStringLiteral, createFunctionLiteral }
+export {
+  evalLiteralExpression,
+  createLiteral,
+  createStringLiteral,
+  createFunctionLiteral,
+  createUndefinedLiteral
+}
