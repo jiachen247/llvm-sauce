@@ -1,5 +1,4 @@
 import * as es from 'estree'
-import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { createNewEnvironment } from '../helper'

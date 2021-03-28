@@ -11,7 +11,7 @@ import {
   getUndefinedCode
 } from '../helper'
 
-const SIZE_OF_DATA_NODE = 16 // jiachen is very generous
+const SIZE_OF_DATA_NODE = 16
 
 // returns a pointer to a data node
 function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
@@ -23,14 +23,6 @@ function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
   const literal = lObj.builder.createBitCast(raw, literalStructPtr)
   const typePtr = lObj.builder.createInBoundsGEP(literal, [zero, zero])
   const valuePtr = lObj.builder.createInBoundsGEP(literal, [zero, one])
-
-  // let casted = value
-
-  // // struct defines value to be a double
-  // const doubleType = l.Type.getDoubleTy(lObj.context)
-  // if (value.type.typeID != doubleType.typeID) {
-  //   casted = lObj.builder.createBitCast(value, doubleType)
-  // }
 
   lObj.builder.createStore(typeCode, typePtr, false)
   lObj.builder.createStore(value, valuePtr, false)
@@ -121,10 +113,11 @@ string literal
 -----------------
 
 function literal
------------------
-| double: type  |
-| pointer: str  |
------------------
+--------------------
+| double: type     |
+| pointer: env     |
+| pointer: functor |
+--------------------
 */
 function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObjs): l.Value {
   let value = node.value
