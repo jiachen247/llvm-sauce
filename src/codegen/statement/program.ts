@@ -6,8 +6,8 @@ import { createNewEnvironment } from '../helper'
 import { evaluateStatement } from '../codegen'
 
 function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs): l.Value {
-  const voidFunType = l.FunctionType.get(l.Type.getVoidTy(lObj.context), false)
-  const mainFun = functionSetup(voidFunType, 'main', lObj)
+  const mainFunType = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), false)
+  const mainFun = functionSetup(mainFunType, 'main', lObj)
   lObj.function = mainFun
 
   const programEnv = createNewEnvironment(node.body, undefined, lObj)
@@ -19,7 +19,10 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
     }
   }
 
-  lObj.builder.createRetVoid()
+  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
+    const zero = l.ConstantInt.get(lObj.context, 0)
+    lObj.builder.createRet(zero)
+  }
 
   try {
     l.verifyFunction(mainFun)

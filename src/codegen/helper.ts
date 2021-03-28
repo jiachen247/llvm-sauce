@@ -67,7 +67,7 @@ function lookupEnv(name: string, frame: Environment): Location {
 function mallocByValue(sizeValue: l.Value, lObj: LLVMObjs, name?: string) {
   const mallocFunType = l.FunctionType.get(
     l.Type.getInt8PtrTy(lObj.context),
-    [l.Type.getInt64Ty(lObj.context)],
+    [l.Type.getInt32Ty(lObj.context)],
     false
   )
 
@@ -76,8 +76,7 @@ function mallocByValue(sizeValue: l.Value, lObj: LLVMObjs, name?: string) {
 }
 
 function malloc(size: number, lObj: LLVMObjs, name?: string) {
-  const sizeValue = l.ConstantInt.get(lObj.context, size, 64)
-
+  const sizeValue = l.ConstantInt.get(lObj.context, size)
   return mallocByValue(sizeValue, lObj, name)
 }
 

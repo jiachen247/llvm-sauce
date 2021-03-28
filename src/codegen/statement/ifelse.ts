@@ -31,7 +31,6 @@ function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMOb
   if (!lObj.builder.getInsertBlock()!.getTerminator()) {
     lObj.builder.createBr(endBlock)
   }
-  
 
   lObj.builder.setInsertionPoint(alternativeBlock)
   evaluateStatement(node.alternate!, parent, lObj)

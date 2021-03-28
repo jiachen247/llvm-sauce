@@ -26,16 +26,17 @@ function buildStringConcat(context: l.LLVMContext, module: l.Module, builder: l.
   const str2 = fun.getArguments()[1]!
 
   const strlenType = l.FunctionType.get(
-    l.Type.getInt64Ty(context),
+    l.Type.getInt32Ty(context),
     [l.Type.getInt8PtrTy(context)],
     false
   )
-  const one64 = l.ConstantInt.get(context, 1, 64)
+
+  const one = l.ConstantInt.get(context, 1)
   const strLenFun = module.getOrInsertFunction('strlen', strlenType)
   const len1 = builder.createCall(strLenFun.functionType, strLenFun.callee, [str1])
   const len2 = builder.createCall(strLenFun.functionType, strLenFun.callee, [str2])
   const sum = builder.createAdd(len1, len2)
-  const total = builder.createAdd(sum, one64) // +1 for terminator
+  const total = builder.createAdd(sum, one) // +1 for terminator
 
   const newStrLocation = mallocByValue(total, { context, module, builder })
 
@@ -197,7 +198,6 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   const isUndefined = builder.createFCmpOEQ(type, UNDEFINED_CODE)
   builder.createCondBr(isUndefined, displayUndefBlock, displayNumberBlock)
 
-
   /* DISPLAY NUMBER */
   builder.setInsertionPoint(displayNumberBlock)
   format = builder.createBitCast(format_number, l.Type.getInt8PtrTy(context))
@@ -252,10 +252,10 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
 function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBuilder) {
   const mallocFunctionType = l.FunctionType.get(
     l.Type.getInt8PtrTy(context),
-    [l.Type.getInt64Ty(context)],
+    [l.Type.getInt32Ty(context)],
     false
   )
-  //  declare i8* @malloc(i64) #1
+  //  declare i8* @malloc(i32) #1
   module.getOrInsertFunction('malloc', mallocFunctionType)
 
   // declare printf
@@ -274,7 +274,7 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
 
   // declare strlen
   const strlenType = l.FunctionType.get(
-    l.Type.getInt64Ty(context),
+    l.Type.getInt32Ty(context),
     [l.Type.getInt8PtrTy(context)],
     false
   )
