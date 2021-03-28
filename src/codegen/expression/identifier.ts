@@ -2,10 +2,10 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { lookup_env } from '../helper'
+import { lookupEnv } from '../helper'
 
 function evalIdentifierExpression(node: es.Identifier, env: Environment, lObj: LLVMObjs): l.Value {
-  const { jumps, offset } = lookup_env(node.name, env)
+  const { jumps, offset } = lookupEnv(node.name, env)
   let frame = env.getPointer()!
 
   const literalStructType = lObj.module.getTypeByName('literal')!

@@ -2,20 +2,15 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { NUMBER_TYPE_CODE } from '../constants'
 import { createLiteral, createFunctionLiteral } from '../expression/literal'
-import { createNewFunctionEnvironment, getNumberTypeCode, lookup_env } from '../helper'
+import { createNewFunctionEnvironment, getNumberTypeCode, lookupEnv } from '../helper'
 import { evalBlockStatement } from '../statement/block'
 
 function formatFunctionName(name: string) {
   return `__${name}`
 }
 
-function evalFunctionStatement(
-  node: es.FunctionDeclaration,
-  parent: Environment,
-  lObj: LLVMObjs
-) {
+function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment, lObj: LLVMObjs) {
   const resumePoint = lObj.builder.getInsertBlock()!
   const prevFunction = lObj.function!
   // ----------------------------------------------------
@@ -24,17 +19,12 @@ function evalFunctionStatement(
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
 
-  const numberOfParameters = node.params.length + 1 // +1 for parent env
-  let argDef = []
-
-  for (let i = 0; i < numberOfParameters; i++) {
-    argDef.push(literalStructPtr)
-  }
+  const numberOfParameters = node.params.length
 
   const genericFunctionType = l.FunctionType.get(
     literalStructPtr,
-    [literalStructPtr],
-    true
+    [literalStructPtr, literalStructPtrPtr],
+    false
   )
 
   const fun = l.Function.create(
@@ -52,27 +42,21 @@ function evalFunctionStatement(
   const parentAddress = fun.getArguments()[0]! // first arg
   const env = createNewFunctionEnvironment(node.params, node.body.body, parent, parentAddress, lObj)
 
-  // load args into the bew env
-  const base = fun.getArguments()[0]!
-  for (let i = 1; i < numberOfParameters; i++) {
-    
-    const name = (node.params[i-1] as es.Identifier).name
-    const loc = lookup_env(name, env)
-    // guranteed to be the imm frame since params
-
-    const ptr = lObj.builder.createInBoundsGEP(literalStructPtr, env.getPointer()!, [
-      l.ConstantInt.get(lObj.context, loc.offset)
+  // NEED TO CREATE NEW ENV FROM
+  const enc = fun.getArguments()[0]! // do i even need this?
+  const arg1 = fun.getArguments()[1]!
+  const params = lObj.builder.createBitCast(arg1, literalStructPtrPtr)
+  const f = lObj.builder.createBitCast(env.getPointer()!, literalStructPtrPtr)
+  let base, value, target
+  for (let i = 0; i < numberOfParameters; i++) {
+    base = lObj.builder.createInBoundsGEP(literalStructPtr, params, [
+      l.ConstantInt.get(lObj.context, i)
     ])
-
-    const bastPtr = lObj.builder.createBitCast(bastPtr, )
-
-    const arg = lObj.builder.createInBoundsGEP(literalStructPtr, env.getPointer()!, [
-      l.ConstantInt.get(lObj.context, loc.offset)
+    value = lObj.builder.createLoad(base)
+    target = lObj.builder.createInBoundsGEP(literalStructPtr, f, [
+      l.ConstantInt.get(lObj.context, i + 1)
     ])
-  
-  
-    console.log(fun.getArguments())
-    lObj.builder.createStore(arg, ptr, true)
+    lObj.builder.createStore(value, target)
   }
 
   evalBlockStatement(node.body, env, lObj)
@@ -96,7 +80,7 @@ function evalFunctionStatement(
 
   let frame = parent.getPointer()!
   // for source 1 it should be the immediate frame
-  const { jumps, offset } = lookup_env(node.id!.name, parent)
+  const { jumps, offset } = lookupEnv(node.id!.name, parent)
 
   for (let i = 0; i < jumps; i++) {
     const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!)

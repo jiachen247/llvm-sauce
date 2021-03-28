@@ -2,7 +2,12 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment, Location } from '../context/environment'
 import { LLVMObjs } from '../types/types'
-import { NUMBER_TYPE_CODE, BOOLEAN_TYPE_CODE, STRING_TYPE_CODE, FUNCTION_TYPE_CODE } from './constants'
+import {
+  NUMBER_TYPE_CODE,
+  BOOLEAN_TYPE_CODE,
+  STRING_TYPE_CODE,
+  FUNCTION_TYPE_CODE
+} from './constants'
 
 function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
   let count = 0
@@ -18,7 +23,7 @@ function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
       env.addRecord(name!)
     } else if (node.type === 'FunctionDeclaration') {
       count += 1
-      const decl = (node as es.FunctionDeclaration)
+      const decl = node as es.FunctionDeclaration
       env.addRecord(decl.id!.name)
     }
   }
@@ -26,20 +31,19 @@ function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
 }
 
 function createEnv(count: number, lObj: LLVMObjs): l.Value {
-
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
   // size + 1 for env parent ptr  (already included in params.length)
-  const size = (count) * 8 // 64 bit
+  const size = count * 8 // 64 bit
   // env registers start with e
 
-  const addr =  malloc(size, lObj, 'env')
+  const addr = malloc(size, lObj, 'env')
   return lObj.builder.createBitCast(addr, literalStructPtr)
 }
 
 // jump is the number of back pointers to follow in the env
-function lookup_env(name: string, frame: Environment): Location {
+function lookupEnv(name: string, frame: Environment): Location {
   let jumps = 0
   let currentFrame = frame
 
@@ -186,11 +190,32 @@ function throwRuntimeTypeError(lObj: LLVMObjs) {
   errorWithString('boo type mismatch', lObj)
 }
 
+function createArgumentContainer(params: l.Value[], lObj: LLVMObjs) {
+  const n = params.length
+
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
+  // size + 1 for env parent ptr  (already included in params.length)
+  const size = n * 8 // 64 bit
+
+  const raw = malloc(size, lObj, 'params')
+  const addr = lObj.builder.createBitCast(raw, literalStructPtrPtr)
+  let base
+  for (let i = 0; i < n; i++) {
+    base = lObj.builder.createInBoundsGEP(literalStructPtr, addr, [
+      l.ConstantInt.get(lObj.context, i)
+    ])
+    lObj.builder.createStore(params[i], base)
+  }
+
+  return lObj.builder.createBitCast(addr, literalStructPtrPtr)
+}
 
 export {
   scanOutDir,
   createEnv,
-  lookup_env,
+  lookupEnv,
   malloc,
   mallocByValue,
   display,
@@ -202,5 +227,6 @@ export {
   errorWithValue,
   createNewEnvironment,
   createNewFunctionEnvironment,
-  throwRuntimeTypeError
+  throwRuntimeTypeError,
+  createArgumentContainer
 }

@@ -1,5 +1,5 @@
-function f(x) {
-    display(x);
+function f(x, y) {
+    display(x + y);
 }
-f("yay");
-//"yay"
+f(100, 200);
+//300.000000

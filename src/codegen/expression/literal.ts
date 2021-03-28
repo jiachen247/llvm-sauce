@@ -3,7 +3,12 @@ import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { malloc } from '../helper'
-import { getNumberTypeCode, getBooleanTypeCode, getStringTypeCode, getFunctionTypeCode } from '../helper'
+import {
+  getNumberTypeCode,
+  getBooleanTypeCode,
+  getStringTypeCode,
+  getFunctionTypeCode
+} from '../helper'
 
 const SIZE_OF_DATA_NODE = 16 // jiachen is very generous
 
@@ -69,7 +74,6 @@ function createStringLiteral(str: l.Value, lObj: LLVMObjs): l.Value {
 
   return lObj.builder.createBitCast(literal, literalStructPtr)
 }
-
 
 function createFunctionLiteral(fun: l.Function, env: l.Value, lObj: LLVMObjs): l.Value {
   const code = getFunctionTypeCode(lObj)
@@ -138,4 +142,4 @@ function evalLiteralExpression(node: es.Literal, env: Environment, lObj: LLVMObj
   }
 }
 
-export { evalLiteralExpression, createLiteral, createStringLiteral, createFunctionLiteral}
+export { evalLiteralExpression, createLiteral, createStringLiteral, createFunctionLiteral }

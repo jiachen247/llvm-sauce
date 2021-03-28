@@ -23,14 +23,14 @@ class Environment {
   private names: Map<string, Record>
   private parent?: Environment
   private ptr?: Value // this stores the actual pointer to the frame
-  private counter : number
+  private counter: number
   constructor(theNames: Map<string, Record>, parent?: Environment) {
     this.names = theNames
     this.parent = parent
     this.counter = 0
   }
 
-  static createNewEnvironment(parent?: Environment) : Environment {
+  static createNewEnvironment(parent?: Environment): Environment {
     return new Environment(new Map<string, Record>(), parent)
   }
 

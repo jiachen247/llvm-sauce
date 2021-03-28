@@ -2,7 +2,7 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { lookup_env } from '../helper'
+import { lookupEnv } from '../helper'
 import { evaluateExpression } from '../codegen'
 
 function evalVariableDeclarationExpression(
@@ -31,7 +31,7 @@ function evalVariableDeclarationExpression(
   const literalStructPtr = l.PointerType.get(literalType, 0)!
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)!
 
-  const { jumps, offset } = lookup_env(name, env)
+  const { jumps, offset } = lookupEnv(name, env)
 
   for (let i = 0; i < jumps; i++) {
     const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!)

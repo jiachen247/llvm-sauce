@@ -34,7 +34,7 @@ function typecheck(
   // error
   lObj.builder.setInsertionPoint(error)
   throwRuntimeTypeError(lObj)
-  lObj.builder.createRetVoid()
+  lObj.builder.createBr(valid) // will never get there!
 
   lObj.builder.setInsertionPoint(valid)
 }
@@ -104,7 +104,7 @@ function evalBinaryStatement(
 
       lObj.builder.setInsertionPoint(errorBlock)
       throwRuntimeTypeError(lObj)
-      lObj.builder.createRetVoid()
+      lObj.builder.createBr(numAddBlock) // will never get there!
 
       /* ADD NUMBERS */
       lObj.builder.setInsertionPoint(numAddBlock)

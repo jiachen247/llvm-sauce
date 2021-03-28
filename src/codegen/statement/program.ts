@@ -32,5 +32,4 @@ function functionSetup(funtype: l.FunctionType, name: string, lObj: LLVMObjs): l
   return fun
 }
 
-
 export { evalProgramStatement }
