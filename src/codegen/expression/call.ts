@@ -42,7 +42,7 @@ function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLV
   const callee = evaluateExpression(node.callee, env, lObj)
 
   const literalStructType = lObj.module.getTypeByName('literal')!
-  
+
   const functionStructType = lObj.module.getTypeByName('function_literal')!
   const functionStructTypePtr = l.PointerType.get(functionStructType, 0)!
 

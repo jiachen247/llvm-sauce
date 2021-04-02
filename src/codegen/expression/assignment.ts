@@ -1,4 +1,4 @@
-// `let x = 1;` is a assignment statement while 
+// `let x = 1;` is a assignment statement while
 // `x = 1;` is an assignment expression
 
 import * as es from 'estree'
@@ -6,11 +6,13 @@ import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { evaluateExpression } from '../codegen'
-import {
-  lookupEnv
-} from '../helper'
+import { lookupEnv } from '../helper'
 
-function evalAssignmentExpression(node: es.AssignmentExpression, env: Environment, lObj: LLVMObjs): l.Value {
+function evalAssignmentExpression(
+  node: es.AssignmentExpression,
+  env: Environment,
+  lObj: LLVMObjs
+): l.Value {
   const id = node.left as es.Identifier // has to be an id
   let name = (id as es.Identifier).name
   let value: l.Value
