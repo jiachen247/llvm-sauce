@@ -44,11 +44,16 @@ const expressionHandlers = {
   AssignmentExpression: evalAssignmentExpression
 }
 
-function evaluateExpression(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
+function evaluateExpression(
+  node: es.Node,
+  env: Environment,
+  lObj: LLVMObjs,
+  inReturnStatement = false
+): l.Value {
   const fun = expressionHandlers[node.type]
 
   if (fun) {
-    return fun(node, env, lObj)
+    return fun(node, env, lObj, inReturnStatement)
   } else {
     throw new Error('Expression not implemented. ' + JSON.stringify(node))
   }

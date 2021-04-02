@@ -24,11 +24,38 @@ function typecheckFunction(code: l.Value, lObj: LLVMObjs) {
   lObj.builder.setInsertionPoint(next)
 }
 
-function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
+function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs): l.Value {
+  const numberOfParameters = params.length
+  const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
+  const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
+  const thisEnv = lObj.builder.createBitCast(lObj.functionEnv!, literalStructPtrPtr)
+
+  let target
+
+  // rewrite args in the function env frame!
+  for (let i = 0; i < numberOfParameters; i++) {
+    target = lObj.builder.createInBoundsGEP(literalStructPtr, thisEnv, [
+      l.ConstantInt.get(lObj.context, i + 1)
+    ])
+    lObj.builder.createStore(params[i], target)
+  }
+
+
+  return lObj.builder.createBr(lObj.functionEntry!)
+}
+
+function evalCallExpression(
+  node: es.CallExpression,
+  env: Environment,
+  lObj: LLVMObjs,
+  tailCall: boolean = false
+): l.Value {
   const params = node.arguments.map(x => evaluateExpression(x, env, lObj))
 
-  // check for builtins
-  if (node.callee.type === 'Identifier') {
+  if (tailCall) {
+    return handleTailCall(params, env, lObj)
+  } else if (node.callee.type === 'Identifier') {
     const callee = (node.callee as es.Identifier).name
     const builtins: { [id: string]: () => l.CallInst } = {
       display: () => display(params, env, lObj)
