@@ -234,7 +234,7 @@ next6:                                            ; preds = %error5, %next3
 }
 
 define %literal* @__anon(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
@@ -243,6 +243,9 @@ f.entry:
   %5 = load %literal*, %literal** %4
   %6 = getelementptr inbounds %literal*, %literal** %2, i32 1
   store %literal* %5, %literal** %6
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %7 = getelementptr inbounds %literal*, %literal** %2, i32 1
   %8 = load %literal*, %literal** %7
   %9 = call i8* @malloc(i32 16)
@@ -314,7 +317,7 @@ add.end:                                          ; preds = %add.str, %add.num
 }
 
 define %literal* @__anon.1(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
@@ -323,6 +326,9 @@ f.entry:
   %5 = load %literal*, %literal** %4
   %6 = getelementptr inbounds %literal*, %literal** %2, i32 1
   store %literal* %5, %literal** %6
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %7 = getelementptr inbounds %literal*, %literal** %2, i32 1
   %8 = load %literal*, %literal** %7
   %9 = call i8* @malloc(i32 16)
@@ -363,7 +369,7 @@ tc.valid:                                         ; preds = %tc.error, %tc.next
 }
 
 define %literal* @__anon.2(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
@@ -372,6 +378,9 @@ f.entry:
   %5 = load %literal*, %literal** %4
   %6 = getelementptr inbounds %literal*, %literal** %2, i32 1
   store %literal* %5, %literal** %6
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %7 = call i8* @malloc(i32 16)
   %8 = bitcast i8* %7 to %function_literal*
   %9 = getelementptr inbounds %function_literal, %function_literal* %8, i32 0, i32 0
@@ -385,7 +394,7 @@ f.entry:
 }
 
 define %literal* @__anon.3(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
@@ -394,6 +403,9 @@ f.entry:
   %5 = load %literal*, %literal** %4
   %6 = getelementptr inbounds %literal*, %literal** %2, i32 1
   store %literal* %5, %literal** %6
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %7 = call i8* @malloc(i32 16)
   %8 = bitcast i8* %7 to %function_literal*
   %9 = getelementptr inbounds %function_literal, %function_literal* %8, i32 0, i32 0
@@ -407,7 +419,7 @@ f.entry:
 }
 
 define %literal* @__anon.4(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
@@ -416,6 +428,9 @@ f.entry:
   %5 = load %literal*, %literal** %4
   %6 = getelementptr inbounds %literal*, %literal** %2, i32 1
   store %literal* %5, %literal** %6
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %7 = getelementptr inbounds %literal*, %literal** %2, i32 1
   %8 = load %literal*, %literal** %7
   %9 = bitcast %literal** %2 to %literal***

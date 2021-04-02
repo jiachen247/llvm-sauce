@@ -155,7 +155,7 @@ next:                                             ; preds = %error, %entry
 }
 
 define %literal* @__factorial(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
@@ -164,6 +164,9 @@ f.entry:
   %5 = load %literal*, %literal** %4
   %6 = getelementptr inbounds %literal*, %literal** %2, i32 1
   store %literal* %5, %literal** %6
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %env1 = call i8* @malloc(i32 8)
   %7 = bitcast i8* %env1 to %literal**
   %8 = bitcast %literal** %7 to %literal***

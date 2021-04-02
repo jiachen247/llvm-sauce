@@ -144,11 +144,14 @@ next:                                             ; preds = %error, %entry
 }
 
 define %literal* @__f(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 16)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
   store %literal** %0, %literal*** %3
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %env1 = call i8* @malloc(i32 16)
   %4 = bitcast i8* %env1 to %literal**
   %5 = bitcast %literal** %4 to %literal***
@@ -189,11 +192,14 @@ next:                                             ; preds = %error, %f.entry
 }
 
 define %literal* @__g(%literal** %0, %literal** %1) {
-f.entry:
+f.setup:
   %env = call i8* @malloc(i32 8)
   %2 = bitcast i8* %env to %literal**
   %3 = bitcast %literal** %2 to %literal***
   store %literal** %0, %literal*** %3
+  br label %f.entry
+
+f.entry:                                          ; preds = %f.setup
   %env1 = call i8* @malloc(i32 8)
   %4 = bitcast i8* %env1 to %literal**
   %5 = bitcast %literal** %4 to %literal***

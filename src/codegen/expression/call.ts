@@ -41,7 +41,6 @@ function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs
     lObj.builder.createStore(params[i], target)
   }
 
-
   return lObj.builder.createBr(lObj.functionEntry!)
 }
 

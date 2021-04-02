@@ -44,15 +44,13 @@ function isTailCallRecursive(expr?: es.Expression, currentFunctionName?: string)
 }
 
 function evalReturnStatement(node: es.ReturnStatement, env: Environment, lObj: LLVMObjs) {
-
   if (node.argument) {
     if (isTailCallRecursive(node.argument, lObj.functionName)) {
-        evalCallExpression(node.argument! as es.CallExpression, env, lObj, true)
+      evalCallExpression(node.argument! as es.CallExpression, env, lObj, true)
     } else {
       const result = evaluateExpression(node.argument!, env, lObj)
       lObj.builder.createRet(result)
     }
-
   } else {
     const undef = createUndefinedLiteral(lObj)
     lObj.builder.createRet(undef)
