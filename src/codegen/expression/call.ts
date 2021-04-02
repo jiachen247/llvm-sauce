@@ -26,7 +26,7 @@ function typecheckFunction(code: l.Value, lObj: LLVMObjs) {
 
 function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
   const params = node.arguments.map(x => evaluateExpression(x, env, lObj))
-  
+
   // check for builtins
   if (node.callee.type === 'Identifier') {
     const callee = (node.callee as es.Identifier).name

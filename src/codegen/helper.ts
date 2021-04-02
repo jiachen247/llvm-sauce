@@ -35,7 +35,7 @@ function createEnv(count: number, lObj: LLVMObjs): l.Value {
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  
+
   // size + 1 for env parent ptr  (already included in params.length)
   const size = (count + 1) * 8 // 64 bit
   // env registers start with e
