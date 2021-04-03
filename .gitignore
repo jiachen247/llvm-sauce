@@ -11,7 +11,3 @@ input
 output
 *.s
 *.out
-
-for f in *.source; do 
-    mv -- "$f" "${f%.source}.js"
-done
