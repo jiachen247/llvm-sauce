@@ -10,14 +10,12 @@ import { evalBlockStatement } from './statement/block'
 import { evalIfStatement } from './statement/ifelse'
 import { evalFunctionStatement, evalArrowFunctionExpression } from './statement/function'
 import { evalReturnStatement } from './statement/return'
-import { evalWhileStatement, evalContinueStatement, evalBreakStatement } from './statement/while'
 import { evalIdentifierExpression } from './expression/identifier'
 import { evalUnaryExpression } from './expression/uop'
 import { evalBinaryStatement } from './expression/bop'
 import { evalLiteralExpression } from './expression/literal'
 import { evalCallExpression } from './expression/call'
 import { evalTernaryExpression } from './expression/ternary'
-import { evalAssignmentExpression } from './expression/assignment'
 
 const statementHandlers = {
   Program: evalProgramStatement,
@@ -26,10 +24,7 @@ const statementHandlers = {
   BlockStatement: evalBlockStatement,
   IfStatement: evalIfStatement,
   FunctionDeclaration: evalFunctionStatement,
-  ReturnStatement: evalReturnStatement,
-  WhileStatement: evalWhileStatement,
-  ContinueStatement: evalContinueStatement,
-  BreakStatement: evalBreakStatement
+  ReturnStatement: evalReturnStatement
 }
 
 const expressionHandlers = {
@@ -40,8 +35,7 @@ const expressionHandlers = {
   Literal: evalLiteralExpression,
   CallExpression: evalCallExpression,
   ConditionalExpression: evalTernaryExpression,
-  ArrowFunctionExpression: evalArrowFunctionExpression,
-  AssignmentExpression: evalAssignmentExpression
+  ArrowFunctionExpression: evalArrowFunctionExpression
 }
 
 function evaluateExpression(
@@ -69,7 +63,7 @@ function evaluateStatement(node: es.Node, env: Environment, lObj: LLVMObjs) {
   }
 }
 
-function eval_toplevel(node: es.Node) {
+function eval_toplevel(node: es.Node, tco: boolean) {
   const context = new l.LLVMContext()
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
@@ -78,8 +72,10 @@ function eval_toplevel(node: es.Node) {
 
   // doesnt do anything currently
   const globalEnv = new Environment(new Map<string, Record>())
-  evaluateStatement(node, globalEnv, { context, module, builder })
-
+  const config = { tco }
+  const functionContext = {}
+  const lObj = { context, module, builder, config, functionContext }
+  evaluateStatement(node, globalEnv, lObj)
   return module
 }
 

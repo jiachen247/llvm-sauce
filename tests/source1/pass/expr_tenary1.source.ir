@@ -122,7 +122,7 @@ tenary.true:                                      ; preds = %entry
   %13 = getelementptr inbounds %literal, %literal* %11, i32 0, i32 1
   store double 1.000000e+00, double* %12
   store double 1.000000e+00, double* %13
-  br label %if.end
+  br label %tenary.end
 
 tenary.false:                                     ; preds = %entry
   %14 = call i8* @malloc(i32 16)
@@ -131,9 +131,9 @@ tenary.false:                                     ; preds = %entry
   %17 = getelementptr inbounds %literal, %literal* %15, i32 0, i32 1
   store double 1.000000e+00, double* %16
   store double 2.000000e+00, double* %17
-  br label %if.end
+  br label %tenary.end
 
-if.end:                                           ; preds = %tenary.false, %tenary.true
+tenary.end:                                       ; preds = %tenary.false, %tenary.true
   %18 = phi %literal* [ %11, %tenary.true ], [ %15, %tenary.false ]
   %19 = getelementptr inbounds %literal*, %literal** %1, i32 1
   store %literal* %18, %literal** %19

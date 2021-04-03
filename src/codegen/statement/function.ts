@@ -18,8 +18,7 @@ function evalFunctionExpression(
   name?: string
 ): l.Value {
   const resumePoint = lObj.builder.getInsertBlock()!
-  const prevFunction = lObj.function!
-  const prevFunctionName = lObj.functionName
+  const prevFunctionContext = lObj.functionContext
   // ----------------------------------------------------
 
   const literalStruct = lObj.module.getTypeByName('literal')!
@@ -41,9 +40,6 @@ function evalFunctionExpression(
     lObj.module
   )
 
-  lObj.function = fun
-  lObj.functionName = name
-
   const setup = l.BasicBlock.create(lObj.context, 'f.setup', fun)
   const entry = l.BasicBlock.create(lObj.context, 'f.entry', fun)
   lObj.builder.setInsertionPoint(setup)
@@ -58,8 +54,6 @@ function evalFunctionExpression(
     enclosingFrame,
     lObj
   )
-  const prevFunctionEnv = lObj.functionEnv
-  lObj.functionEnv = env.getPointer()!
 
   const params = lObj.builder.createBitCast(paramsAddr, literalStructPtrPtr)
   const thisEnv = lObj.builder.createBitCast(env.getPointer()!, literalStructPtrPtr)
@@ -79,8 +73,7 @@ function evalFunctionExpression(
   lObj.builder.createBr(entry)
   lObj.builder.setInsertionPoint(entry)
 
-  const prevEntry = lObj.functionEntry
-  lObj.functionEntry = entry
+  lObj.functionContext = { function: fun, name: name, env: env.getPointer()!, entry: entry }
   if (isExpressionBased) {
     // lambda expression
     const res = evaluateExpression(node.body, env, lObj)
@@ -103,10 +96,7 @@ function evalFunctionExpression(
 
   // ----------------------------------------------------------------
   lObj.builder.setInsertionPoint(resumePoint)
-  lObj.function = prevFunction
-  lObj.functionName = prevFunctionName
-  lObj.functionEntry = prevEntry
-  lObj.functionEnv = prevFunctionEnv
+  lObj.functionContext = prevFunctionContext
 
   return createFunctionLiteral(fun, parent.getPointer()!, lObj)
 }

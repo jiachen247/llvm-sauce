@@ -19,9 +19,17 @@ function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMOb
   const value = lObj.builder.createLoad(testResultValueAddress)
   const asInt = lObj.builder.createFPToSI(value, l.Type.getInt1Ty(lObj.context))
 
-  const consequentBlock = l.BasicBlock.create(lObj.context, 'if.true', lObj.function!)
-  const alternativeBlock = l.BasicBlock.create(lObj.context, 'if.false', lObj.function!)
-  const endBlock = l.BasicBlock.create(lObj.context, 'if.end', lObj.function!)
+  const consequentBlock = l.BasicBlock.create(
+    lObj.context,
+    'if.true',
+    lObj.functionContext.function!
+  )
+  const alternativeBlock = l.BasicBlock.create(
+    lObj.context,
+    'if.false',
+    lObj.functionContext.function!
+  )
+  const endBlock = l.BasicBlock.create(lObj.context, 'if.end', lObj.functionContext.function!)
 
   lObj.builder.createCondBr(asInt, consequentBlock, alternativeBlock)
 

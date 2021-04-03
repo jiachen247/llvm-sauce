@@ -18,9 +18,9 @@ function typecheck(
   actualRightType: l.Value,
   lObj: LLVMObjs
 ) {
-  const next = l.BasicBlock.create(lObj.context, 'tc.next', lObj.function!)
-  const error = l.BasicBlock.create(lObj.context, 'tc.error', lObj.function!)
-  const valid = l.BasicBlock.create(lObj.context, 'tc.valid', lObj.function!)
+  const next = l.BasicBlock.create(lObj.context, 'tc.next', lObj.functionContext.function!)
+  const error = l.BasicBlock.create(lObj.context, 'tc.error', lObj.functionContext.function!)
+  const valid = l.BasicBlock.create(lObj.context, 'tc.valid', lObj.functionContext.function!)
 
   const leftMatch = lObj.builder.createFCmpOEQ(actualLeftType, expectedLeftType)
   lObj.builder.createCondBr(leftMatch, next, error)
@@ -77,14 +77,34 @@ function evalBinaryStatement(
   switch (operator) {
     case '+':
       let res
-      const firstNumberBlock = l.BasicBlock.create(lObj.context, 'add.num1', lObj.function)
-      const checkFirstStirng = l.BasicBlock.create(lObj.context, 'add.cstr1', lObj.function)
-      const checkSecondStirng = l.BasicBlock.create(lObj.context, 'add.cstr2', lObj.function)
-      const errorBlock = l.BasicBlock.create(lObj.context, 'add.err', lObj.function)
+      const firstNumberBlock = l.BasicBlock.create(
+        lObj.context,
+        'add.num1',
+        lObj.functionContext.function
+      )
+      const checkFirstStirng = l.BasicBlock.create(
+        lObj.context,
+        'add.cstr1',
+        lObj.functionContext.function
+      )
+      const checkSecondStirng = l.BasicBlock.create(
+        lObj.context,
+        'add.cstr2',
+        lObj.functionContext.function
+      )
+      const errorBlock = l.BasicBlock.create(lObj.context, 'add.err', lObj.functionContext.function)
 
-      const numAddBlock = l.BasicBlock.create(lObj.context, 'add.num', lObj.function)
-      const strcatBlock = l.BasicBlock.create(lObj.context, 'add.str', lObj.function)
-      const endBlock = l.BasicBlock.create(lObj.context, 'add.end', lObj.function)
+      const numAddBlock = l.BasicBlock.create(
+        lObj.context,
+        'add.num',
+        lObj.functionContext.function
+      )
+      const strcatBlock = l.BasicBlock.create(
+        lObj.context,
+        'add.str',
+        lObj.functionContext.function
+      )
+      const endBlock = l.BasicBlock.create(lObj.context, 'add.end', lObj.functionContext.function)
 
       res = lObj.builder.createFCmpOEQ(leftTypeValue, NUMBER_CODE)
 

@@ -20,10 +20,17 @@ function evalTernaryExpression(
   const value = lObj.builder.createLoad(testResultValueAddress)
   const asInt = lObj.builder.createFPToSI(value, l.Type.getInt1Ty(lObj.context))
 
-  const consequentBlock = l.BasicBlock.create(lObj.context, 'tenary.true', lObj.function!)
-  const alternativeBlock = l.BasicBlock.create(lObj.context, 'tenary.false', lObj.function!)
-  const endBlock = l.BasicBlock.create(lObj.context, 'tenary.end', lObj.function!)
-
+  const consequentBlock = l.BasicBlock.create(
+    lObj.context,
+    'tenary.true',
+    lObj.functionContext.function!
+  )
+  const alternativeBlock = l.BasicBlock.create(
+    lObj.context,
+    'tenary.false',
+    lObj.functionContext.function!
+  )
+  const endBlock = l.BasicBlock.create(lObj.context, 'tenary.end', lObj.functionContext.function!)
 
   lObj.builder.createCondBr(asInt, consequentBlock, alternativeBlock)
 
@@ -39,7 +46,6 @@ function evalTernaryExpression(
   } else {
     lObj.builder.createBr(endBlock)
   }
-
 
   lObj.builder.setInsertionPoint(alternativeBlock)
   const alternativeValue = evaluateExpression(node.alternate!, env, lObj)
@@ -64,8 +70,6 @@ function evalTernaryExpression(
     phi.addIncoming(alternativeValue, altEndBlock)
     return phi
   }
-
-
 }
 
 export { evalTernaryExpression }

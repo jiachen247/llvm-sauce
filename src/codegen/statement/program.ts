@@ -8,9 +8,13 @@ import { evaluateStatement } from '../codegen'
 function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs): l.Value {
   const mainFunType = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), false)
   const mainFun = functionSetup(mainFunType, 'main', lObj)
-  lObj.function = mainFun
 
   const programEnv = createNewEnvironment(node.body, undefined, lObj)
+  lObj.functionContext = {
+    function: mainFun,
+    name: 'main',
+    env: programEnv.getPointer()!
+  }
 
   for (const statement of node.body) {
     evaluateStatement(statement, programEnv, lObj)

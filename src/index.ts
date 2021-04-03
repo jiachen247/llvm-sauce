@@ -16,6 +16,7 @@ function main() {
     .create([
       ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '4'],
       ['o', 'output=FILE', 'writes LLVM bytecode to a file, otherwise we print to stdout'],
+      ['t', 'tco', 'optimize tail calls to respect ES6 PTC sematics'],
       ['p', 'pretty', 'enable printing the parsed JSON'],
       ['h', 'help', 'print this help']
     ])
@@ -45,7 +46,7 @@ function compile(options: any, code: string) {
   if (options.pretty) console.log(es_str)
 
   const outputFile = options.output
-  const module = eval_toplevel(estree)
+  const module = eval_toplevel(estree, options.tco)
   if (outputFile) {
     llvm.writeBitcodeToFile(module, outputFile)
   } else {

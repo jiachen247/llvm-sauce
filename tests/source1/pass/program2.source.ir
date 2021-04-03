@@ -222,7 +222,7 @@ tenary.true:                                      ; preds = %tc.valid
   %39 = getelementptr inbounds %literal, %literal* %37, i32 0, i32 1
   store double 1.000000e+00, double* %38
   store double 1.000000e+00, double* %39
-  br label %if.end
+  br label %tenary.end
 
 tenary.false:                                     ; preds = %tc.valid
   %40 = bitcast %literal** %7 to %literal***
@@ -250,7 +250,7 @@ tenary.false:                                     ; preds = %tc.valid
   %60 = fcmp oeq double %58, 1.000000e+00
   br i1 %60, label %tc.next2, label %tc.error3
 
-if.end:                                           ; preds = %tc.valid7, %tenary.true
+tenary.end:                                       ; preds = %tc.valid7, %tenary.true
   %61 = phi %literal* [ %37, %tenary.true ], [ %97, %tc.valid7 ]
   ret %literal* %61
 
@@ -326,6 +326,6 @@ tc.valid7:                                        ; preds = %tc.error6, %tc.next
   %99 = getelementptr inbounds %literal, %literal* %97, i32 0, i32 1
   store double 1.000000e+00, double* %98
   store double %95, double* %99
-  br label %if.end
+  br label %tenary.end
 }
 

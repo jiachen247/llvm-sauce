@@ -38,7 +38,10 @@ function buildStringConcat(context: l.LLVMContext, module: l.Module, builder: l.
   const sum = builder.createAdd(len1, len2)
   const total = builder.createAdd(sum, one) // +1 for terminator
 
-  const newStrLocation = mallocByValue(total, { context, module, builder })
+  const config = { tco: false }
+  const functionContext = {}
+
+  const newStrLocation = mallocByValue(total, { context, module, builder, config, functionContext })
 
   const strcpyType = l.FunctionType.get(
     l.Type.getInt8PtrTy(context),

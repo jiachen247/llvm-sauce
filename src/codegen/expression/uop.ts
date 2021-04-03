@@ -12,8 +12,8 @@ import { createLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
 
 function typecheck(actual: l.Value, expected: l.Value, lObj: LLVMObjs) {
-  const error = l.BasicBlock.create(lObj.context, 'tc.error', lObj.function!)
-  const valid = l.BasicBlock.create(lObj.context, 'tc.valid', lObj.function!)
+  const error = l.BasicBlock.create(lObj.context, 'tc.error', lObj.functionContext.function!)
+  const valid = l.BasicBlock.create(lObj.context, 'tc.valid', lObj.functionContext.function!)
 
   const isValid = lObj.builder.createFCmpOEQ(actual, expected)
   lObj.builder.createCondBr(isValid, valid, error)

@@ -11,8 +11,8 @@ import {
 } from '../helper'
 
 function typecheckFunction(code: l.Value, lObj: LLVMObjs) {
-  const error = l.BasicBlock.create(lObj.context, 'error', lObj.function!)
-  const next = l.BasicBlock.create(lObj.context, 'next', lObj.function!)
+  const error = l.BasicBlock.create(lObj.context, 'error', lObj.functionContext.function!)
+  const next = l.BasicBlock.create(lObj.context, 'next', lObj.functionContext.function!)
 
   const isFunction = lObj.builder.createFCmpOEQ(code, getFunctionTypeCode(lObj))
   lObj.builder.createCondBr(isFunction, next, error)
@@ -29,7 +29,7 @@ function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  const thisEnv = lObj.builder.createBitCast(lObj.functionEnv!, literalStructPtrPtr)
+  const thisEnv = lObj.builder.createBitCast(lObj.functionContext.env!, literalStructPtrPtr)
 
   let target
 
@@ -41,28 +41,23 @@ function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs
     lObj.builder.createStore(params[i], target)
   }
 
-  return lObj.builder.createBr(lObj.functionEntry!)
+  return lObj.builder.createBr(lObj.functionContext.entry!)
 }
 
-function isTailCall(name: string) : boolean {
-  return name.startsWith("#")
+function isTailCall(name: string): boolean {
+  return name.startsWith('#')
 }
 
-function evalCallExpression(
-  node: es.CallExpression,
-  env: Environment,
-  lObj: LLVMObjs
-): l.Value {
+function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLVMObjs): l.Value {
   const params = node.arguments.map(x => evaluateExpression(x, env, lObj))
 
   if (node.callee.type === 'Identifier') {
     const callee = node.callee as es.Identifier
     const name = callee.name
 
-    if (isTailCall(name)){
+    if (isTailCall(name)) {
       return handleTailCall(params, env, lObj)
     }
-
 
     const builtins: { [id: string]: () => l.CallInst } = {
       display: () => display(params, env, lObj)

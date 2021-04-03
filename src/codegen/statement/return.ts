@@ -12,12 +12,11 @@ import { findAndMarkTailCalls } from '../tailcall'
 
 function evalReturnStatement(node: es.ReturnStatement, env: Environment, lObj: LLVMObjs) {
   if (node.argument) {
-    if (findAndMarkTailCalls(node.argument!, lObj.functionName!)) {
+    if (lObj.config.tco && findAndMarkTailCalls(node.argument!, lObj.functionContext.name!)) {
       const result = evaluateExpression(node.argument!, env, lObj)
       if (!lObj.builder.getInsertBlock()!.getTerminator()) {
         lObj.builder.createRet(result)
       }
-      
     } else {
       const result = evaluateExpression(node.argument!, env, lObj)
       lObj.builder.createRet(result)

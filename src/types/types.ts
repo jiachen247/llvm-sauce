@@ -6,14 +6,23 @@ interface WhileLoopLabels {
   end: l.BasicBlock
 }
 
+interface Config {
+  tco: boolean
+}
+
+interface FunctionContext {
+  function?: l.Function
+  name?: string
+  env?: l.Value
+  entry?: l.BasicBlock
+}
+
 interface LLVMObjs {
   context: l.LLVMContext
   module: l.Module
   builder: l.IRBuilder
-  function?: l.Function // current function
-  functionName?: string
-  functionEntry?: l.BasicBlock
-  functionEnv?: l.Value
+  config: Config
+  functionContext: FunctionContext
   loop?: WhileLoopLabels
 }
 
