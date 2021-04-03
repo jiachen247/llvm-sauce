@@ -10,7 +10,7 @@ function report() {
 
 trap report INT
 
-for i in ./tests/source?/*/*.source; do
+for i in ./tests/source?/*/*.js; do
     echo "Testing $i"
     tested=$((tested+1))
     expected=$(tail -n 1 $i | sed "s/\/\/\ *//") # expected output

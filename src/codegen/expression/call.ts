@@ -59,7 +59,7 @@ function evalCallExpression(node: es.CallExpression, env: Environment, lObj: LLV
       return handleTailCall(params, env, lObj)
     }
 
-    const builtins: { [id: string]: () => l.CallInst } = {
+    const builtins: { [id: string]: () => l.Value } = {
       display: () => display(params, env, lObj)
     }
 

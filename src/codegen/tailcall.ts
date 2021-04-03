@@ -1,12 +1,4 @@
 import * as es from 'estree'
-import * as l from 'llvm-node'
-import { Environment } from '../context/environment'
-import { LLVMObjs } from '../types/types'
-import { createUndefinedLiteral } from './expression/literal'
-import { evalCallExpression } from './expression/call'
-
-import { evaluateExpression } from './codegen'
-import { evalExpressionStatement } from './statement/expression'
 
 const DELIMETER = '#'
 
@@ -23,10 +15,10 @@ function findAndMarkTailCalls(expr: es.Expression, currentFunctionName: string):
     }
   } else if (expr.type === 'ConditionalExpression') {
     const tenary = expr as es.ConditionalExpression
-    return (
-      findAndMarkTailCalls(tenary.consequent, currentFunctionName) ||
-      findAndMarkTailCalls(tenary.alternate, currentFunctionName)
-    )
+
+    const consequent = findAndMarkTailCalls(tenary.consequent, currentFunctionName)
+    const alternative = findAndMarkTailCalls(tenary.alternate, currentFunctionName)
+    return consequent && alternative
   }
 
   return false

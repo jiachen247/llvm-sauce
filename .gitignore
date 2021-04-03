@@ -1,5 +1,5 @@
 node_modules/
-*.js
+dist/*.js
 *.map
 dist/
 .idea/
@@ -11,3 +11,7 @@ input
 output
 *.s
 *.out
+
+for f in *.source; do 
+    mv -- "$f" "${f%.source}.js"
+done

@@ -2,12 +2,7 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import {
-  getNumberTypeCode,
-  getBooleanTypeCode,
-  getStringTypeCode,
-  throwRuntimeTypeError
-} from '../helper'
+import { getNumberTypeCode, getBooleanTypeCode, throwRuntimeTypeError } from '../helper'
 import { createLiteral } from './literal'
 import { evaluateExpression } from '../codegen'
 
@@ -28,7 +23,6 @@ function typecheck(actual: l.Value, expected: l.Value, lObj: LLVMObjs) {
 function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: LLVMObjs): l.Value {
   const NUMBER_CODE = getNumberTypeCode(lObj)
   const BOOLEAN_CODE = getBooleanTypeCode(lObj)
-  const STRING_CODE = getStringTypeCode(lObj)
 
   const operator: string = node.operator
   const arg = evaluateExpression(node.argument, env, lObj)
@@ -45,7 +39,6 @@ function evalUnaryExpression(node: es.UnaryExpression, env: Environment, lObj: L
   const exprValue = lObj.builder.createLoad(exprAddr)
 
   const i1 = l.Type.getInt1Ty(lObj.context)
-  const intType = l.Type.getInt64Ty(lObj.context)
   const doubleType = l.Type.getDoubleTy(lObj.context)
 
   let value, retType, tmp

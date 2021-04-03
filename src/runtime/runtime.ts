@@ -1,5 +1,4 @@
 import * as l from 'llvm-node'
-import { FUNCTION_TYPE_CODE, UNDEFINED_TYPE_CODE } from '../codegen/constants'
 import { mallocByValue } from '../codegen/helper'
 
 /* CONCAT STRINGS */
@@ -180,7 +179,7 @@ function buildDisplayFunction(context: l.LLVMContext, module: l.Module, builder:
   const value = builder.createLoad(valuePtr)
 
   // can get from helper
-  const NUMBER_CODE = l.ConstantFP.get(context, 1)
+  // const NUMBER_CODE = l.ConstantFP.get(context, 1)
   const BOOLEAN_CODE = l.ConstantFP.get(context, 2)
   const STRING_CODE = l.ConstantFP.get(context, 3)
   const FUNCTION_CODE = l.ConstantFP.get(context, 4)
@@ -311,7 +310,6 @@ function buildRuntime(context: l.LLVMContext, module: l.Module, builder: l.IRBui
 
   const litPtr = l.PointerType.get(structType, 0)
   const litPtrPtr = l.PointerType.get(litPtr, 0)
-  const litPtrPtrPtr = l.PointerType.get(litPtrPtr, 0)
 
   const genericFunctionType = l.FunctionType.get(litPtr, [litPtrPtr, litPtrPtr], false)
 

@@ -82,16 +82,17 @@ function malloc(size: number, lObj: LLVMObjs, name?: string) {
   return mallocByValue(sizeValue, lObj, name)
 }
 
-function display(args: l.Value[], env: Environment, lObj: LLVMObjs): l.CallInst {
+function display(args: l.Value[], env: Environment, lObj: LLVMObjs): l.Value {
   const displayFunction = lObj.module.getFunction('display')!
   if (args.length < 1) {
     console.error('display requires one arguement')
   }
-  return lObj.builder.createCall(
+  lObj.builder.createCall(
     displayFunction.type.elementType,
     lObj.module.getFunction('display')!,
     args
   )
+  return createUndefinedLiteral(lObj)
 }
 
 function errorWithString(str: string, lObj: LLVMObjs) {

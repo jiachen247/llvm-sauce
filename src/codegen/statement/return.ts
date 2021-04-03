@@ -1,13 +1,8 @@
 import * as es from 'estree'
-import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { createUndefinedLiteral } from '../expression/literal'
-import { evalCallExpression } from '../expression/call'
-
 import { evaluateExpression } from '../codegen'
-import { evalExpressionStatement } from './expression'
-
 import { findAndMarkTailCalls } from '../tailcall'
 
 function evalReturnStatement(node: es.ReturnStatement, env: Environment, lObj: LLVMObjs) {

@@ -4,7 +4,7 @@ import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { evaluateExpression } from '../codegen'
 import { createUndefinedLiteral, createFunctionLiteral } from '../expression/literal'
-import { createNewFunctionEnvironment, getNumberTypeCode, lookupEnv } from '../helper'
+import { createNewFunctionEnvironment, lookupEnv } from '../helper'
 import { evalBlockStatement } from '../statement/block'
 
 function formatFunctionName(name?: string) {
