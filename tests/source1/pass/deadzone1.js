@@ -3,4 +3,5 @@ function f() {
     const y = 1;
 }
 f();
-//undefined
+// expected: undefined
+// expected: undefined

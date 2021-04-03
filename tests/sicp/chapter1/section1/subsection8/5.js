@@ -8,5 +8,5 @@ function good_enough(guess, x) {
     return abs(square(guess) - x) < 0.001;
 }
 
-display(good_enough(1.41, 2));
-//false
+good_enough(1.41, 2);
+// expected: false

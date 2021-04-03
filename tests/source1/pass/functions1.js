@@ -2,4 +2,5 @@ function f() {
     display("yay");
 }
 f();
-//"yay"
+// expected: "yay"
+// expected: undefined

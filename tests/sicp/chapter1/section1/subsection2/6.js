@@ -1,4 +1,4 @@
 const pi = 3.14159;
 const radius = 10;
-display(pi * radius * radius);
-//314.159000
+pi * radius * radius;
+// expected: 314.159000

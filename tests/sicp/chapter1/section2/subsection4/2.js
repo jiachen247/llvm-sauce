@@ -9,5 +9,5 @@ function expt_iter(b,counter,product) {
                        b * product);
 }
 
-display(expt(3, 4));
-//81.000000
+expt(3, 4);
+// expected: 81.000000

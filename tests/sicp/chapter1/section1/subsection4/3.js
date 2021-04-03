@@ -1,5 +1,5 @@
 function square(x) {
     return x * x;
 }
-display(square(2 + 5));
-//49.000000
+square(2 + 5);
+// expected: 49.000000

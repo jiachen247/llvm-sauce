@@ -1,3 +1,3 @@
 const x = "Hello world!";
-display(x);
-//"Hello world!"
+x;
+// expected: "Hello world!"

@@ -1,3 +1,3 @@
 const f = () => 1;
-display(f());
-//1.000000
+f();
+// expected: 1.000000

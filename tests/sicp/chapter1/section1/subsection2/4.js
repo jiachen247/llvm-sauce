@@ -1,3 +1,3 @@
 const pi = 3.14159;
-display(pi);
-//3.141590
+pi;
+// expected: 3.141590

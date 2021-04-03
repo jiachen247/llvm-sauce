@@ -15,5 +15,5 @@ function integral(f, a, b, dx) {
            dx;
 }
 
-display(integral(cube, 0, 1, 0.01));
-//0.249988
+integral(cube, 0, 1, 0.01);
+// expected: 0.249988

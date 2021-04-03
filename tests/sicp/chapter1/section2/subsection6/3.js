@@ -12,5 +12,5 @@ function expmod(base, exp, m) {
              : (base * expmod(base, exp - 1, m)) % m;
 }
 
-display(expmod(4, 3, 5));
-//4.000000
+expmod(4, 3, 5);
+// expected: 4.000000

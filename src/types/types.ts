@@ -1,11 +1,5 @@
 import * as l from 'llvm-node'
 
-interface WhileLoopLabels {
-  test: l.BasicBlock
-  body: l.BasicBlock
-  end: l.BasicBlock
-}
-
 interface Config {
   tco: boolean
 }
@@ -24,7 +18,6 @@ interface LLVMObjs {
   builder: l.IRBuilder
   config: Config
   functionContext: FunctionContext
-  loop?: WhileLoopLabels
 }
 
 export { LLVMObjs }

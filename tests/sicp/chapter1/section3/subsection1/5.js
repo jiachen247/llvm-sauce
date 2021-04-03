@@ -12,5 +12,5 @@ function sum(term, a, next, b) {
            ? 0
            : term(a) + sum(term, next(a), next, b);
 }
-display(sum_cubes(1, 10));
-//3025.000000
+sum_cubes(1, 10);
+// expected:3025.000000

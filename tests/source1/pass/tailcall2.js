@@ -4,5 +4,5 @@ function fact(n, acc) {
         : fact(n - 1, n * acc);
 }
 
-display(fact(5, 1));
-//120.000000
+fact(5, 1);
+// expected: 120.000000

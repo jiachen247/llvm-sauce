@@ -3,4 +3,5 @@ if (true) {
 } else {
     display(2);
 }
-//1.000000
+// expected: 1.000000
+// expected: undefined

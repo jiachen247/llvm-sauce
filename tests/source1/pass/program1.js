@@ -7,4 +7,5 @@ const x = 1;
          display("boo");
     }
 }
-//"Hello world!"
+// expected: "Hello world!"
+// expected: undefined

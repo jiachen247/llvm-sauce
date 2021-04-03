@@ -121,7 +121,7 @@ entry:
   %13 = getelementptr inbounds %literal, %literal* %12, i32 0, i32 0
   %14 = getelementptr inbounds %literal, %literal* %12, i32 0, i32 1
   store double 2.000000e+00, double* %13
-  store double 1.000000e+00, double* %14
+  store double 0.000000e+00, double* %14
   %15 = getelementptr inbounds %literal, %literal* %12, i32 0, i32 1
   %16 = load double, double* %15
   %17 = fptosi double %16 to i1
@@ -138,7 +138,6 @@ if.true:                                          ; preds = %entry
   %23 = getelementptr inbounds %literal, %literal* %21, i32 0, i32 1
   store double 1.000000e+00, double* %22
   store double 1.000000e+00, double* %23
-  call void @display(%literal* %21)
   br label %if.end
 
 if.false:                                         ; preds = %entry
@@ -152,11 +151,10 @@ if.false:                                         ; preds = %entry
   %29 = getelementptr inbounds %literal, %literal* %27, i32 0, i32 1
   store double 1.000000e+00, double* %28
   store double 2.000000e+00, double* %29
-  call void @display(%literal* %27)
   br label %if.end
 
 if.end:                                           ; preds = %if.false, %if.true
-  %30 = phi %literal* [ %8, %if.true ], [ %8, %if.false ]
+  %30 = phi %literal* [ %21, %if.true ], [ %27, %if.false ]
   call void @display(%literal* %30)
   ret i32 0
 }

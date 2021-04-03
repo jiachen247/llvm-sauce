@@ -13,5 +13,5 @@ function sum_cubes(a, b) {
     return sum(cube, a, inc, b);
 }
 
-display(sum_cubes(1, 10));
-//3025.000000
+sum_cubes(1, 10);
+// expected: 3025.000000

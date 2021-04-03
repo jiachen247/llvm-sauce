@@ -22,5 +22,5 @@ function sqrt(x) {
     return sqrt_iter(1, x);
 }
 
-display(sqrt(9));
-//3.000092
+sqrt(9);
+// expected: 3.000092

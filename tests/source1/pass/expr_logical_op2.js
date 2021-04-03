@@ -1,2 +1,2 @@
-display(true && false);
-//false
+true && false;
+// expected: false

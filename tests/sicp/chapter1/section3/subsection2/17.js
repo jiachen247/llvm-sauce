@@ -4,5 +4,5 @@ function f(g) {
 function square(x) {
     return x * x;
 }
-display(f(square));
-//4.000000
+f(square);
+// expected: 4.000000

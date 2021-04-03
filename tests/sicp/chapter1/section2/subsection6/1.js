@@ -15,5 +15,5 @@ function divides(a, b) {
     return b % a === 0;
 }
 
-display(smallest_divisor(42));
-//2.000000
+smallest_divisor(42);
+// expected: 2.000000

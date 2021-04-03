@@ -6,5 +6,5 @@ function h() {
     }
     return i();
 }
-display(h());
-//2.000000
+h();
+// expected: 2.000000

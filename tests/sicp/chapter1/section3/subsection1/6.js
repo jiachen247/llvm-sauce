@@ -2,5 +2,5 @@ function identity(x) {
     return x;
 }
 
-display(identity(42));
-//42.000000
+identity(42);
+// expected:42.000000

@@ -28,5 +28,5 @@ function cube_root(x) {
                        1.0);
 }
 
-display(cube_root(27));
-//2.999997
+cube_root(27);
+// expected: 2.999997

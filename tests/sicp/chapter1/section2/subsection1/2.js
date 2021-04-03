@@ -8,5 +8,5 @@ function factorial(n) {
    return iter(1, 1);
 }
 
-display(factorial(5));
-//120.000000
+factorial(5);
+// expected: 120.000000

@@ -7,5 +7,5 @@ function fib_iter(a, b, count) {
            : fib_iter(a + b, a, count - 1);
 }
 
-display(fib(6));
-//8.000000
+fib(6);
+// expected: 8.000000

@@ -22,5 +22,5 @@ function improve(guess, x) {
     return average(guess, x / guess);
 }
 
-display(sqrt(5));
-//2.236069
+sqrt(5);
+// expected: 2.236069

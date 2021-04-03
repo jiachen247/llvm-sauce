@@ -4,5 +4,5 @@ function sum_integers(a, b) {
            : a + sum_integers(a + 1, b);
 }
 
-display(sum_integers(1, 10));
-//55.000000
+sum_integers(1, 10);
+// expected: 55.000000

@@ -33,8 +33,8 @@ function close_enough(x,y) {
 function abs(x) {
     return x >= 0 ? x : -x;
 }
-display(half_interval_method(
+half_interval_method(
   x => x * x * x - 2 * x - 3,
   1.0,
-  2.0));
-//1.893066
+  2.0);
+// expected: 1.893066

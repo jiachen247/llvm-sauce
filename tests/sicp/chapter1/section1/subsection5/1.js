@@ -9,5 +9,5 @@ function sum_of_squares(x,y) {
 function f(a) {
     return sum_of_squares(a + 1, a * 2);
 }
-display(f(5));
-//136.000000
+f(5);
+// expected: 136.000000

@@ -1,3 +1,3 @@
 const x = false;
-display(x);
-//false
+x;
+// expected: false

@@ -158,37 +158,40 @@ if.false:                                         ; preds = %entry
   br i1 %32, label %if.true4, label %if.false5
 
 if.end:                                           ; preds = %if.end6, %if.true
+  %33 = phi %literal* [ %8, %if.true ], [ %46, %if.end6 ]
+  call void @display(%literal* %33)
   ret i32 0
 
 if.true4:                                         ; preds = %if.false
   %env7 = call i8* @malloc(i32 8)
-  %33 = bitcast i8* %env7 to %literal**
-  %34 = bitcast %literal** %33 to %literal***
-  store %literal** %24, %literal*** %34
-  %35 = call i8* @malloc(i32 16)
-  %36 = bitcast i8* %35 to %literal*
-  %37 = getelementptr inbounds %literal, %literal* %36, i32 0, i32 0
-  %38 = getelementptr inbounds %literal, %literal* %36, i32 0, i32 1
-  store double 1.000000e+00, double* %37
-  store double 2.000000e+00, double* %38
-  call void @display(%literal* %36)
+  %34 = bitcast i8* %env7 to %literal**
+  %35 = bitcast %literal** %34 to %literal***
+  store %literal** %24, %literal*** %35
+  %36 = call i8* @malloc(i32 16)
+  %37 = bitcast i8* %36 to %literal*
+  %38 = getelementptr inbounds %literal, %literal* %37, i32 0, i32 0
+  %39 = getelementptr inbounds %literal, %literal* %37, i32 0, i32 1
+  store double 1.000000e+00, double* %38
+  store double 2.000000e+00, double* %39
+  call void @display(%literal* %37)
   br label %if.end6
 
 if.false5:                                        ; preds = %if.false
   %env8 = call i8* @malloc(i32 8)
-  %39 = bitcast i8* %env8 to %literal**
-  %40 = bitcast %literal** %39 to %literal***
-  store %literal** %24, %literal*** %40
-  %41 = call i8* @malloc(i32 16)
-  %42 = bitcast i8* %41 to %literal*
-  %43 = getelementptr inbounds %literal, %literal* %42, i32 0, i32 0
-  %44 = getelementptr inbounds %literal, %literal* %42, i32 0, i32 1
-  store double 1.000000e+00, double* %43
-  store double 3.000000e+00, double* %44
-  call void @display(%literal* %42)
+  %40 = bitcast i8* %env8 to %literal**
+  %41 = bitcast %literal** %40 to %literal***
+  store %literal** %24, %literal*** %41
+  %42 = call i8* @malloc(i32 16)
+  %43 = bitcast i8* %42 to %literal*
+  %44 = getelementptr inbounds %literal, %literal* %43, i32 0, i32 0
+  %45 = getelementptr inbounds %literal, %literal* %43, i32 0, i32 1
+  store double 1.000000e+00, double* %44
+  store double 3.000000e+00, double* %45
+  call void @display(%literal* %43)
   br label %if.end6
 
 if.end6:                                          ; preds = %if.false5, %if.true4
+  %46 = phi %literal* [ %8, %if.true4 ], [ %8, %if.false5 ]
   br label %if.end
 }
 

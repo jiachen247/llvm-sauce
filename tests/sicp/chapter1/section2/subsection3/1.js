@@ -14,5 +14,5 @@ function sine(angle) {
            : p(sine(angle / 3.0));
 }
 
-display(sine(PI / 2));
-//1.000000
+sine(PI / 2);
+// expected: 1.000000

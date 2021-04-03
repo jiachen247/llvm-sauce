@@ -25,5 +25,5 @@ function sqrt(x) {
                        1.0);
 }
 
-display(sqrt(6));
-//2.449490
+sqrt(6);
+// expected: 2.449490

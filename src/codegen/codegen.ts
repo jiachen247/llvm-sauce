@@ -53,17 +53,17 @@ function evaluateExpression(
   }
 }
 
-function evaluateStatement(node: es.Node, env: Environment, lObj: LLVMObjs) {
+function evaluateStatement(node: es.Node, env: Environment, lObj: LLVMObjs): l.Value {
   const fun = statementHandlers[node.type]
 
   if (fun) {
-    fun(node, env, lObj)
+    return fun(node, env, lObj)
   } else {
     throw new Error('Statement not implemented. ' + JSON.stringify(node))
   }
 }
 
-function eval_toplevel(node: es.Node, tco: boolean) {
+function eval_toplevel(node: es.Program, tco: boolean) {
   const context = new l.LLVMContext()
   const module = new l.Module('module', context)
   const builder = new l.IRBuilder(context)
@@ -75,6 +75,7 @@ function eval_toplevel(node: es.Node, tco: boolean) {
   const config = { tco }
   const functionContext = {}
   const lObj = { context, module, builder, config, functionContext }
+
   evaluateStatement(node, globalEnv, lObj)
   return module
 }

@@ -4,5 +4,5 @@ function a_plus_abs_b(a, b) {
     return (b >= 0 ? plus : minus)(a, b);
 }
 
-display(a_plus_abs_b(5, -4));
-//9.000000
+a_plus_abs_b(5, -4);
+// expected: 9.000000

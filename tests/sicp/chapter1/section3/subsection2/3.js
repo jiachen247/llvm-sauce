@@ -10,5 +10,5 @@ function pi_sum(a,b) {
                b);
 }
 
-display(8 * pi_sum(1, 1000));
-//3.139593
+8 * pi_sum(1, 1000);
+// expected: 3.139593

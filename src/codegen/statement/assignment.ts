@@ -4,12 +4,13 @@ import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { lookupEnv } from '../helper'
 import { evaluateExpression } from '../codegen'
+import { createUndefinedLiteral } from '../expression/literal'
 
 function evalVariableDeclarationExpression(
   node: es.VariableDeclaration,
   env: Environment,
   lObj: LLVMObjs
-) {
+): l.Value {
   const decl = node.declarations[0]
   const id = decl.id
   const init = decl.init
@@ -40,6 +41,8 @@ function evalVariableDeclarationExpression(
 
     lObj.builder.createStore(value, ptr, false)
   }
+
+  return createUndefinedLiteral(lObj)
 }
 
 export { evalVariableDeclarationExpression }

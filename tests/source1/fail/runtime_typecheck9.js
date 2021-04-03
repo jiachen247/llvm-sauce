@@ -1,2 +1,2 @@
 display(!1);
-//error: "boo type mismatch"
+// expected: error: "boo type mismatch"

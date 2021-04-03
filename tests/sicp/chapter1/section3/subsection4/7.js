@@ -4,5 +4,5 @@ function deriv(g) {
 }
 function cube(x) { return x * x * x; }
 
-display(deriv(cube)(5));
-//75.000150
+deriv(cube)(5);
+// expected: 75.000150

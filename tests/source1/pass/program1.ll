@@ -252,6 +252,8 @@ if.false:                                         ; preds = %tc.valid5
   br label %if.end
 
 if.end:                                           ; preds = %if.false, %if.true
+  %83 = phi %literal* [ %8, %if.true ], [ %8, %if.false ]
+  call void @display(%literal* %83)
   ret i32 0
 }
 

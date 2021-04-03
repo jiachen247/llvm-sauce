@@ -1,3 +1,3 @@
 const size = 2;
-display(size);
-//2.000000
+size;
+// expected: 2.000000

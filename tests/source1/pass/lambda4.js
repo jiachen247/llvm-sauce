@@ -3,5 +3,5 @@ const f = x => {
     const z = y + 10;
     return z + 100;
 };
-display(f(0));
-//111.000000
+f(0);
+// expected: 111.000000

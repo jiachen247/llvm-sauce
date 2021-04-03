@@ -14,5 +14,5 @@ function mul(x) {
 }
 
 const f = compose(add, mul);
-display(f(5));
-//11.000000
+f(5);
+// expected: 11.000000

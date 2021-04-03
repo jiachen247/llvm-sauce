@@ -138,6 +138,8 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
   ])
 
   lObj.builder.createStore(lit, ptr, false)
+
+  return lit
 }
 
 export { evalFunctionStatement, formatFunctionName, evalArrowFunctionExpression }

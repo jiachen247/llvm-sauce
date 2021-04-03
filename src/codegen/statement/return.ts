@@ -12,13 +12,16 @@ function evalReturnStatement(node: es.ReturnStatement, env: Environment, lObj: L
       if (!lObj.builder.getInsertBlock()!.getTerminator()) {
         lObj.builder.createRet(result)
       }
+      return result
     } else {
       const result = evaluateExpression(node.argument!, env, lObj)
       lObj.builder.createRet(result)
+      return result
     }
   } else {
     const undef = createUndefinedLiteral(lObj)
     lObj.builder.createRet(undef)
+    return undef
   }
 }
 

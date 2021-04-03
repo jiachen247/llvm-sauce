@@ -6,5 +6,5 @@ function f() {
     return g();
 }
 
-display(f());
-//100.000000
+f();
+// expected: 100.000000

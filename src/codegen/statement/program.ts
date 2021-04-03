@@ -2,8 +2,8 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { createNewEnvironment } from '../helper'
-import { evaluateStatement } from '../codegen'
+import { createNewEnvironment, display } from '../helper'
+import { evalBlockStatement } from '../statement/block'
 
 function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs): l.Value {
   const mainFunType = l.FunctionType.get(l.Type.getInt32Ty(lObj.context), false)
@@ -17,17 +17,14 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
     udef: undefined
   }
 
-  for (const statement of node.body) {
-    evaluateStatement(statement, programEnv, lObj)
-    if (statement.type === 'ReturnStatement') {
-      break
-    }
-  }
+  // This is guranteed to be a block
+  const block = node.body[0] as es.BlockStatement
 
-  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
-    const zero = l.ConstantInt.get(lObj.context, 0)
-    lObj.builder.createRet(zero)
-  }
+  const result = evalBlockStatement(block, programEnv, lObj)
+  display([result], programEnv, lObj)
+
+  const zero = l.ConstantInt.get(lObj.context, 0)
+  lObj.builder.createRet(zero)
 
   try {
     l.verifyFunction(mainFun)

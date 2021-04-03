@@ -1,3 +1,3 @@
 function f() { }
-display(f);
-//function object
+f;
+// expected: function object

@@ -7,4 +7,5 @@ if(false) {
 } else {
     display(4);
 }
-//3.000000
+// expected: 3.000000
+// expected: undefined

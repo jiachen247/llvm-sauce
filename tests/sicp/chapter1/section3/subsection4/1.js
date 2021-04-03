@@ -8,5 +8,5 @@ function average_damp(f) {
     return x => average(x, f(x));
 }
 
-display(average_damp(square)(10));
-//55.000000
+average_damp(square)(10);
+// expected: 55.000000

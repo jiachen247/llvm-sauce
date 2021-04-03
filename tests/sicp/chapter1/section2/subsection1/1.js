@@ -4,5 +4,5 @@ function factorial(n) {
            : n * factorial(n - 1);
 }
 
-display(factorial(5));
-//120.000000
+factorial(5);
+// expected: 120.000000

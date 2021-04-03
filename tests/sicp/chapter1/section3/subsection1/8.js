@@ -12,5 +12,5 @@ function inc(n) {
 function identity(x) {
     return x;
 }
-display(sum_integers(1, 10));
-//55.000000
+sum_integers(1, 10);
+// expected:55.000000

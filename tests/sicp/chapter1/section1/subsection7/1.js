@@ -19,5 +19,5 @@ function sqrt_iter(guess, x) {
            : sqrt_iter(improve(guess, x), x);
 }
 
-display(sqrt_iter(3,25));
-//5.000000
+sqrt_iter(3,25);
+// expected: 5.000000

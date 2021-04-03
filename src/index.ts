@@ -39,7 +39,7 @@ function compile(options: any, code: string) {
   let estree: es.Program | undefined = slang_parse('{\n' + code + '\n}', context)
 
   if (!estree) {
-    throw new CompileError('js-slang cannot parse the program')
+    throw new CompileError('Failed to parse program!')
   }
 
   let es_str: string = JSON.stringify(estree, null, 4)

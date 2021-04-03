@@ -156,6 +156,8 @@ if.false:                                         ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.false, %if.true
+  %30 = phi %literal* [ %8, %if.true ], [ %8, %if.false ]
+  call void @display(%literal* %30)
   ret i32 0
 }
 

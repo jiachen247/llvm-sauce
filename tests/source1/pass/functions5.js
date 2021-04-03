@@ -5,5 +5,5 @@ function f(x, y) {
         return y;
     }
 }
-display(f(100, 200));
-//100.000000
+f(100, 200);
+// expected: 100.000000

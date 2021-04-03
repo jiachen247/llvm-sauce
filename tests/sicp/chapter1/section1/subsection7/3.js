@@ -2,5 +2,5 @@ function average(x,y) {
     return (x + y) / 2;
 }
 
-display(average(3, 6));
-//4.500000
+average(3, 6);
+// expected: 4.500000

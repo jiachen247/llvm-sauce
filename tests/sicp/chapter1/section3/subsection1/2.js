@@ -7,5 +7,5 @@ function sum_cubes(a, b) {
            : cube(a) + sum_cubes(a + 1, b);
 }
 
-display(sum_cubes(3, 7));
-//775.000000
+sum_cubes(3, 7);
+// expected: 775.000000

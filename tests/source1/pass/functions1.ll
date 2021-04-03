@@ -154,6 +154,7 @@ next:                                             ; preds = %error, %entry
   %params = call i8* @malloc(i32 0)
   %29 = bitcast i8* %params to %literal**
   %30 = call %literal* %26(%literal** %28, %literal** %29)
+  call void @display(%literal* %30)
   ret i32 0
 }
 

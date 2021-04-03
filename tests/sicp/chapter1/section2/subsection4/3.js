@@ -12,5 +12,5 @@ function fast_expt(b, n) {
              : b * fast_expt(b, n - 1);
 }
 
-display(fast_expt(3, 4));
-//81.000000
+fast_expt(3, 4);
+// expected: 81.000000

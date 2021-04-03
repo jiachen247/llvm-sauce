@@ -4,5 +4,5 @@ function times(a,b) {
            : a + times(a, b - 1);
 }
 
-display(times(3, 4));
-//12.000000
+times(3, 4);
+// expected: 12.000000

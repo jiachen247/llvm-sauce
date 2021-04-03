@@ -1,2 +1,2 @@
-display(1 / 0);
-//inf
+1 / 0;
+// expected: inf

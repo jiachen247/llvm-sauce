@@ -9,5 +9,5 @@ function fact_iter(product, counter, max_count) {
                        max_count);
 }
 
-display(factorial(5));
-//120.000000
+factorial(5);
+// expected: 120.000000

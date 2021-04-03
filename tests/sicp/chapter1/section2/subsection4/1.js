@@ -4,5 +4,5 @@ function expt(b,n) {
            : b * expt(b, n - 1);
 }
 
-display(expt(3, 4));
-//81.000000
+expt(3, 4);
+// expected: 81.000000

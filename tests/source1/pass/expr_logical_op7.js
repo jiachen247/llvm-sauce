@@ -1,3 +1,2 @@
-// NOT operator is broken
-display(!false);
-//true
+!false;
+// expected: true

@@ -5,5 +5,5 @@ function improve(guess, x) {
     return average(guess, x / guess);
 }
 
-display(improve(3, 25));
-//5.666667
+improve(3, 25);
+// expected: 5.666667

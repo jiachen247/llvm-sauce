@@ -1,2 +1,2 @@
 "str" - "s"; 
-//error: "boo type mismatch"
+// expected: error: "boo type mismatch"

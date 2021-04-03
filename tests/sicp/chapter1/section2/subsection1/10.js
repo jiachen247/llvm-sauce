@@ -20,5 +20,5 @@ function k(n) {
    return 5 * n * n;
 }
 
-display(k(4));
-//80.000000
+k(4);
+// expected: 80.000000

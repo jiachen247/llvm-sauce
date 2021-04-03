@@ -6,5 +6,5 @@ function fib(n) {
              : fib(n - 1) + fib(n - 2);
 }
 
-display(fib(6));
-//8.000000
+fib(6);
+// expected: 8.000000

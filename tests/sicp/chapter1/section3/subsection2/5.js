@@ -1,4 +1,4 @@
 function plus4(x) { return x + 4; }
 
-display(plus4(3));
-//7.000000
+plus4(3);
+// expected: 7.000000

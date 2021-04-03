@@ -3,5 +3,5 @@ function factorial(n, acc) {
         ? acc
         : factorial(n - 1, n  * acc);
 }
-display(factorial(10, 1));
-//3628800.000000
+factorial(10, 1);
+// expected: 3628800.000000

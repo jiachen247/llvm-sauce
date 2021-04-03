@@ -1,6 +1,6 @@
 const x = 1;
 {
     const x = 2;
-    display(x);
+    x;
 }
-//2.000000
+// expected: 2.000000

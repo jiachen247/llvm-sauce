@@ -9,6 +9,7 @@ function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMOb
   const testResult = evaluateExpression(node.test, parent, lObj)
 
   const literalStruct = lObj.module.getTypeByName('literal')!
+  const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const zero = l.ConstantInt.get(lObj.context, 0)
   const one = l.ConstantInt.get(lObj.context, 1)
 
@@ -33,20 +34,44 @@ function evalIfStatement(node: es.IfStatement, parent: Environment, lObj: LLVMOb
 
   lObj.builder.createCondBr(asInt, consequentBlock, alternativeBlock)
 
-  lObj.builder.setInsertionPoint(consequentBlock)
-  evaluateStatement(node.consequent, parent, lObj)
+  let conTailCall = false
+  let altTailCall = false
 
-  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
+  lObj.builder.setInsertionPoint(consequentBlock)
+  const consequentResult = evaluateStatement(node.consequent, parent, lObj)
+  const conEndBlock = lObj.builder.getInsertBlock()!
+
+  if (conEndBlock.getTerminator()) {
+    conTailCall = true
+  } else {
     lObj.builder.createBr(endBlock)
   }
 
   lObj.builder.setInsertionPoint(alternativeBlock)
-  evaluateStatement(node.alternate!, parent, lObj)
-  if (!lObj.builder.getInsertBlock()!.getTerminator()) {
+  const alternativeResult = evaluateStatement(node.alternate!, parent, lObj)
+  const altEndBlock = lObj.builder.getInsertBlock()!
+
+  if (altEndBlock.getTerminator()) {
+    altTailCall = true
+  } else {
     lObj.builder.createBr(endBlock)
   }
 
   lObj.builder.setInsertionPoint(endBlock)
+
+  if (conTailCall && altTailCall) {
+    // should return nothing
+    return value
+  } else if (conTailCall) {
+    return alternativeResult
+  } else if (altTailCall) {
+    return consequentResult
+  } else {
+    const phi = lObj.builder.createPhi(literalStructPtr, 2)
+    phi.addIncoming(consequentResult, conEndBlock)
+    phi.addIncoming(alternativeResult, altEndBlock)
+    return phi
+  }
 }
 
 export { evalIfStatement }

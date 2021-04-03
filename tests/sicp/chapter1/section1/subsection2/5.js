@@ -1,3 +1,3 @@
 const radius = 10;
-display(radius);
-//10.000000
+radius;
+// expected: 10.000000

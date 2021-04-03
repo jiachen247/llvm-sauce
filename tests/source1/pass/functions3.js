@@ -1,3 +1,3 @@
 function f() { }
-display(f());
-//undefined
+f();
+// expected: undefined

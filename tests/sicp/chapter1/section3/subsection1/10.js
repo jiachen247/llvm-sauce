@@ -12,5 +12,5 @@ function sum(term, a, next, b) {
            ? 0
            : term(a) + sum(term, next(a), next, b);
 }
-display(8 * pi_sum(1, 1000));
-//3.139593
+8 * pi_sum(1, 1000);
+// expected:3.139593

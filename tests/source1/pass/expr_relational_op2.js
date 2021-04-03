@@ -1,2 +1,2 @@
-display(100 === 99);
-//false
+100 === 99;
+// expected: false

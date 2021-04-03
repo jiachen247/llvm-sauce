@@ -7,5 +7,5 @@ function average(x,y) {
 function square(x) {
     return x * x;
 }
-display(average_damp(square)(10));
-//55.000000
+average_damp(square)(10);
+// expected: 55.000000

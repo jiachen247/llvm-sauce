@@ -25,5 +25,5 @@ function search(f, neg_point, pos_point) {
     }
 }
 
-display(search(x => x * x - 1, 0, 2));
-//1.000000
+search(x => x * x - 1, 0, 2);
+// expected: 1.000000

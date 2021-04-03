@@ -15,7 +15,6 @@ source_filename = "module"
 @1 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 @2 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 @3 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@4 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 
 declare i8* @malloc(i32)
 
@@ -155,7 +154,7 @@ entry:
   br i1 %31, label %next, label %error
 
 error:                                            ; preds = %entry
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @4, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @3, i32 0, i32 0))
   call void @exit(i32 1)
   br label %next
 
@@ -192,7 +191,7 @@ f.setup:
   store %literal* %8, %literal** %9
   br label %f.entry
 
-f.entry:                                          ; preds = %f.setup
+f.entry:                                          ; preds = %tc.valid7, %f.setup
   %env1 = call i8* @malloc(i32 8)
   %10 = bitcast i8* %env1 to %literal**
   %11 = bitcast %literal** %10 to %literal***
@@ -276,13 +275,12 @@ tenary.false:                                     ; preds = %tc.valid
   %63 = fcmp oeq double %61, 1.000000e+00
   br i1 %63, label %tc.next2, label %tc.error3
 
-tenary.end:                                       ; preds = %next, %tenary.true
-  %64 = phi %literal* [ %46, %tenary.true ], [ %111, %next ]
-  ret %literal* %64
+tenary.end:                                       ; preds = %tenary.true
+  ret %literal* %46
 
 tc.next2:                                         ; preds = %tenary.false
-  %65 = fcmp oeq double %62, 1.000000e+00
-  br i1 %65, label %tc.valid4, label %tc.error3
+  %64 = fcmp oeq double %62, 1.000000e+00
+  br i1 %64, label %tc.valid4, label %tc.error3
 
 tc.error3:                                        ; preds = %tc.next2, %tenary.false
   call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @1, i32 0, i32 0))
@@ -290,35 +288,35 @@ tc.error3:                                        ; preds = %tc.next2, %tenary.f
   br label %tc.valid4
 
 tc.valid4:                                        ; preds = %tc.error3, %tc.next2
-  %66 = fsub double %57, %58
-  %67 = call i8* @malloc(i32 16)
-  %68 = bitcast i8* %67 to %literal*
-  %69 = getelementptr inbounds %literal, %literal* %68, i32 0, i32 0
-  %70 = getelementptr inbounds %literal, %literal* %68, i32 0, i32 1
-  store double 1.000000e+00, double* %69
-  store double %66, double* %70
-  %71 = bitcast %literal** %10 to %literal***
-  %72 = load %literal**, %literal*** %71
-  %73 = getelementptr inbounds %literal*, %literal** %72, i32 1
-  %74 = load %literal*, %literal** %73
-  %75 = bitcast %literal** %10 to %literal***
-  %76 = load %literal**, %literal*** %75
-  %77 = getelementptr inbounds %literal*, %literal** %76, i32 2
-  %78 = load %literal*, %literal** %77
-  %79 = getelementptr inbounds %literal, %literal* %74, i32 0, i32 1
-  %80 = getelementptr inbounds %literal, %literal* %78, i32 0, i32 1
+  %65 = fsub double %57, %58
+  %66 = call i8* @malloc(i32 16)
+  %67 = bitcast i8* %66 to %literal*
+  %68 = getelementptr inbounds %literal, %literal* %67, i32 0, i32 0
+  %69 = getelementptr inbounds %literal, %literal* %67, i32 0, i32 1
+  store double 1.000000e+00, double* %68
+  store double %65, double* %69
+  %70 = bitcast %literal** %10 to %literal***
+  %71 = load %literal**, %literal*** %70
+  %72 = getelementptr inbounds %literal*, %literal** %71, i32 1
+  %73 = load %literal*, %literal** %72
+  %74 = bitcast %literal** %10 to %literal***
+  %75 = load %literal**, %literal*** %74
+  %76 = getelementptr inbounds %literal*, %literal** %75, i32 2
+  %77 = load %literal*, %literal** %76
+  %78 = getelementptr inbounds %literal, %literal* %73, i32 0, i32 1
+  %79 = getelementptr inbounds %literal, %literal* %77, i32 0, i32 1
+  %80 = load double, double* %78
   %81 = load double, double* %79
-  %82 = load double, double* %80
-  %83 = getelementptr inbounds %literal, %literal* %74, i32 0, i32 0
-  %84 = getelementptr inbounds %literal, %literal* %78, i32 0, i32 0
+  %82 = getelementptr inbounds %literal, %literal* %73, i32 0, i32 0
+  %83 = getelementptr inbounds %literal, %literal* %77, i32 0, i32 0
+  %84 = load double, double* %82
   %85 = load double, double* %83
-  %86 = load double, double* %84
-  %87 = fcmp oeq double %85, 1.000000e+00
-  br i1 %87, label %tc.next5, label %tc.error6
+  %86 = fcmp oeq double %84, 1.000000e+00
+  br i1 %86, label %tc.next5, label %tc.error6
 
 tc.next5:                                         ; preds = %tc.valid4
-  %88 = fcmp oeq double %86, 1.000000e+00
-  br i1 %88, label %tc.valid7, label %tc.error6
+  %87 = fcmp oeq double %85, 1.000000e+00
+  br i1 %87, label %tc.valid7, label %tc.error6
 
 tc.error6:                                        ; preds = %tc.next5, %tc.valid4
   call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0))
@@ -326,42 +324,17 @@ tc.error6:                                        ; preds = %tc.next5, %tc.valid
   br label %tc.valid7
 
 tc.valid7:                                        ; preds = %tc.error6, %tc.next5
-  %89 = fmul double %81, %82
-  %90 = call i8* @malloc(i32 16)
-  %91 = bitcast i8* %90 to %literal*
-  %92 = getelementptr inbounds %literal, %literal* %91, i32 0, i32 0
-  %93 = getelementptr inbounds %literal, %literal* %91, i32 0, i32 1
-  store double 1.000000e+00, double* %92
-  store double %89, double* %93
-  %94 = bitcast %literal** %10 to %literal***
-  %95 = load %literal**, %literal*** %94
-  %96 = bitcast %literal** %95 to %literal***
-  %97 = load %literal**, %literal*** %96
-  %98 = getelementptr inbounds %literal*, %literal** %97, i32 1
-  %99 = load %literal*, %literal** %98
-  %100 = getelementptr inbounds %literal, %literal* %99, i32 0, i32 0
-  %101 = load double, double* %100
-  %102 = fcmp oeq double %101, 4.000000e+00
-  br i1 %102, label %next, label %error
-
-error:                                            ; preds = %tc.valid7
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @3, i32 0, i32 0))
-  call void @exit(i32 1)
-  br label %next
-
-next:                                             ; preds = %error, %tc.valid7
-  %103 = bitcast %literal* %99 to %function_literal*
-  %104 = getelementptr inbounds %function_literal, %function_literal* %103, i32 0, i32 2
-  %105 = load %literal* (%literal**, %literal**)*, %literal* (%literal**, %literal**)** %104
-  %106 = getelementptr inbounds %function_literal, %function_literal* %103, i32 0, i32 1
-  %107 = load %literal**, %literal*** %106
-  %params = call i8* @malloc(i32 16)
-  %108 = bitcast i8* %params to %literal**
-  %109 = getelementptr inbounds %literal*, %literal** %108, i32 0
-  store %literal* %68, %literal** %109
-  %110 = getelementptr inbounds %literal*, %literal** %108, i32 1
-  store %literal* %91, %literal** %110
-  %111 = call %literal* %105(%literal** %107, %literal** %108)
-  br label %tenary.end
+  %88 = fmul double %80, %81
+  %89 = call i8* @malloc(i32 16)
+  %90 = bitcast i8* %89 to %literal*
+  %91 = getelementptr inbounds %literal, %literal* %90, i32 0, i32 0
+  %92 = getelementptr inbounds %literal, %literal* %90, i32 0, i32 1
+  store double 1.000000e+00, double* %91
+  store double %88, double* %92
+  %93 = getelementptr inbounds %literal*, %literal** %2, i32 1
+  store %literal* %67, %literal** %93
+  %94 = getelementptr inbounds %literal*, %literal** %2, i32 2
+  store %literal* %90, %literal** %94
+  br label %f.entry
 }
 

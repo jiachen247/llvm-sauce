@@ -3,4 +3,5 @@ if (1 + 1 > 2) {
 } else {
     display(2);
 }
-//2.000000
+// expected: 2.000000
+// expected: undefined

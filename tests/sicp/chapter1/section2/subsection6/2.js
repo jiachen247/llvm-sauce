@@ -18,5 +18,5 @@ function is_prime(n) {
     return n === smallest_divisor(n);
 }
 
-display(is_prime(42));
-//false
+is_prime(42);
+// expected: false

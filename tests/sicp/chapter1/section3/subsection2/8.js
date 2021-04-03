@@ -11,5 +11,5 @@ function f(x, y) {
                     1 - y);
 }
 
-display(f(3, 4));
-//456.000000
+f(3, 4);
+// expected: 456.000000

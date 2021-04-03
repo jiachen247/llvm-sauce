@@ -21,5 +21,5 @@ function first_denomination(kinds_of_coins) {
          kinds_of_coins === 5 ? 50 : 0;
 }
 
-display(count_change(100));
-//292.000000
+count_change(100);
+// expected: 292.000000

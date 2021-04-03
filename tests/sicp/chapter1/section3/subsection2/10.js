@@ -9,5 +9,5 @@ function f(x, y) {
            a * b;
 }
 
-display(f(3, 4));
-//456.000000
+f(3, 4);
+// expected: 456.000000

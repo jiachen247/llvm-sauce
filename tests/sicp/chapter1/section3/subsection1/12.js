@@ -12,5 +12,5 @@ function sum(term, a, next, b) {
            ? 0
            : term(a) + sum(term, next(a), next, b);
 }
-display(integral(cube, 0, 1, 0.01));
-//0.249988
+integral(cube, 0, 1, 0.01);
+// expected:0.249988

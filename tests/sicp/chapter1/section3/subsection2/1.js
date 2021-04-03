@@ -1,2 +1,2 @@
-display(x => x + 4);
-//function object
+x => x + 4;
+// expected: function object
