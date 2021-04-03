@@ -9,6 +9,7 @@ import {
   FUNCTION_TYPE_CODE,
   UNDEFINED_TYPE_CODE
 } from './constants'
+import { createUndefinedLiteral } from './expression/literal'
 
 function scanOutDir(nodes: Array<es.Node>, env: Environment): number {
   let count = 0
@@ -157,7 +158,7 @@ function createNewFunctionEnvironment(
   params.map(param => env.addRecord((param as es.Identifier).name))
 
   // +1 for back / parent env pointer as first entry
-  const environmentSize = params.length + scanOutDir(body, env)
+  const environmentSize = params.length
   const envValue = createEnv(environmentSize, lObj)
   const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
   lObj.builder.createStore(parentAddress, framePtr)
@@ -188,6 +189,17 @@ function createNewEnvironment(
     const framePtr = lObj.builder.createBitCast(envValue, literalStructPtrPtrPtr)
     lObj.builder.createStore(parentAddr, framePtr)
     env.setParent(parent)
+  }
+
+  const udef = createUndefinedLiteral(lObj)
+
+  // init the rest of the fields to `undefined` (temporal dead zone)
+  const base = lObj.builder.createBitCast(envValue, literalStructPtrPtr)
+  for (let i = 1; i <= environmentSize; i++) {
+    const addr = lObj.builder.createInBoundsGEP(literalStructPtr, base, [
+      l.ConstantInt.get(lObj.context, i)
+    ])
+    lObj.builder.createStore(udef, addr, true)
   }
 
   return env

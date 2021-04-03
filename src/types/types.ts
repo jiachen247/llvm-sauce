@@ -15,6 +15,7 @@ interface FunctionContext {
   name?: string
   env?: l.Value
   entry?: l.BasicBlock
+  udef?: l.Value
 }
 
 interface LLVMObjs {

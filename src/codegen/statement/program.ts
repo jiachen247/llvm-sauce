@@ -13,7 +13,8 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
   lObj.functionContext = {
     function: mainFun,
     name: 'main',
-    env: programEnv.getPointer()!
+    env: programEnv.getPointer()!,
+    udef: undefined
   }
 
   for (const statement of node.body) {

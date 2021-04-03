@@ -31,9 +31,15 @@ function createLiteral(value: l.Value, typeCode: l.Value, lObj: LLVMObjs) {
 }
 
 function createUndefinedLiteral(lObj: LLVMObjs) {
-  const code = getUndefinedCode(lObj)
-  const zero = l.ConstantFP.get(lObj.context, 0)
-  return createLiteral(zero, code, lObj)
+  if (lObj.functionContext.udef) {
+    return lObj.functionContext.udef
+  } else {
+    const code = getUndefinedCode(lObj)
+    const zero = l.ConstantFP.get(lObj.context, 0)
+    const udef = createLiteral(zero, code, lObj)
+    lObj.functionContext.udef = udef
+    return udef
+  }
 }
 
 function createNumberLiteral(n: number, lObj: LLVMObjs): l.Value {

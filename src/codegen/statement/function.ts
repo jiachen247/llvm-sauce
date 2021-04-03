@@ -73,7 +73,13 @@ function evalFunctionExpression(
   lObj.builder.createBr(entry)
   lObj.builder.setInsertionPoint(entry)
 
-  lObj.functionContext = { function: fun, name: name, env: env.getPointer()!, entry: entry }
+  lObj.functionContext = {
+    function: fun,
+    name: name,
+    env: env.getPointer()!,
+    entry: entry,
+    udef: undefined
+  }
   if (isExpressionBased) {
     // lambda expression
     const res = evaluateExpression(node.body, env, lObj)
