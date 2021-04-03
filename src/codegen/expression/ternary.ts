@@ -22,25 +22,50 @@ function evalTernaryExpression(
 
   const consequentBlock = l.BasicBlock.create(lObj.context, 'tenary.true', lObj.function!)
   const alternativeBlock = l.BasicBlock.create(lObj.context, 'tenary.false', lObj.function!)
-  const endBlock = l.BasicBlock.create(lObj.context, 'if.end', lObj.function!)
+  const endBlock = l.BasicBlock.create(lObj.context, 'tenary.end', lObj.function!)
+
 
   lObj.builder.createCondBr(asInt, consequentBlock, alternativeBlock)
+
+  let conTailCall = false
+  let altTailCall = false
 
   lObj.builder.setInsertionPoint(consequentBlock)
   const consequentValue = evaluateExpression(node.consequent, env, lObj)
   const conEndBlock = lObj.builder.getInsertBlock()!
-  lObj.builder.createBr(endBlock)
+
+  if (conEndBlock.getTerminator()) {
+    conTailCall = true
+  } else {
+    lObj.builder.createBr(endBlock)
+  }
+
 
   lObj.builder.setInsertionPoint(alternativeBlock)
   const alternativeValue = evaluateExpression(node.alternate!, env, lObj)
   const altEndBlock = lObj.builder.getInsertBlock()!
-  lObj.builder.createBr(endBlock)
-
+  if (altEndBlock.getTerminator()) {
+    altTailCall = true
+  } else {
+    lObj.builder.createBr(endBlock)
+  }
   lObj.builder.setInsertionPoint(endBlock)
-  const phi = lObj.builder.createPhi(literalStructPtr, 2)
-  phi.addIncoming(consequentValue, conEndBlock)
-  phi.addIncoming(alternativeValue, altEndBlock)
-  return phi
+
+  if (conTailCall && altTailCall) {
+    // should return nothing
+    return value
+  } else if (conTailCall) {
+    return alternativeValue
+  } else if (altTailCall) {
+    return consequentValue
+  } else {
+    const phi = lObj.builder.createPhi(literalStructPtr, 2)
+    phi.addIncoming(consequentValue, conEndBlock)
+    phi.addIncoming(alternativeValue, altEndBlock)
+    return phi
+  }
+
+
 }
 
 export { evalTernaryExpression }

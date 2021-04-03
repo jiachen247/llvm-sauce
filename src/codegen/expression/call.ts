@@ -44,24 +44,32 @@ function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs
   return lObj.builder.createBr(lObj.functionEntry!)
 }
 
+function isTailCall(name: string) : boolean {
+  return name.startsWith("#")
+}
+
 function evalCallExpression(
   node: es.CallExpression,
   env: Environment,
-  lObj: LLVMObjs,
-  tailCall: boolean = false
+  lObj: LLVMObjs
 ): l.Value {
   const params = node.arguments.map(x => evaluateExpression(x, env, lObj))
 
-  if (tailCall) {
-    return handleTailCall(params, env, lObj)
-  } else if (node.callee.type === 'Identifier') {
-    const callee = (node.callee as es.Identifier).name
+  if (node.callee.type === 'Identifier') {
+    const callee = node.callee as es.Identifier
+    const name = callee.name
+
+    if (isTailCall(name)){
+      return handleTailCall(params, env, lObj)
+    }
+
+
     const builtins: { [id: string]: () => l.CallInst } = {
       display: () => display(params, env, lObj)
     }
 
-    if (builtins[callee]) {
-      return builtins[callee]()
+    if (builtins[name]) {
+      return builtins[name]()
     }
   }
 
