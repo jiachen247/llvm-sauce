@@ -1,4 +1,5 @@
 import * as l from 'llvm-node'
+import { Environment } from '../context/environment'
 
 interface Config {
   tco: boolean
@@ -7,9 +8,10 @@ interface Config {
 interface FunctionContext {
   function?: l.Function
   name?: string
-  env?: l.Value
+  env?: Environment
   entry?: l.BasicBlock
   udef?: l.Value
+  phis?: Array<l.PhiNode>
 }
 
 interface LLVMObjs {

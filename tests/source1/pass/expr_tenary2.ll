@@ -118,7 +118,7 @@ entry:
   store double 5.000000e+00, double* %9
   store double 0.000000e+00, double* %10
   %11 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  store volatile %literal* %8, %literal** %11
+  store %literal* %8, %literal** %11
   %12 = call i8* @malloc(i32 16)
   %13 = bitcast i8* %12 to %literal*
   %14 = getelementptr inbounds %literal, %literal* %13, i32 0, i32 0
@@ -154,12 +154,10 @@ tenary.false:                                     ; preds = %entry
   br label %tenary.end
 
 tenary.end:                                       ; preds = %tenary.false, %tenary.end4
-  %32 = phi %literal* [ %54, %tenary.end4 ], [ %29, %tenary.false ]
+  %32 = phi %literal* [ %52, %tenary.end4 ], [ %29, %tenary.false ]
   %33 = getelementptr inbounds %literal*, %literal** %5, i32 1
   store %literal* %32, %literal** %33
-  %34 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  %35 = load %literal*, %literal** %34
-  call void @display(%literal* %35)
+  call void @display(%literal* %32)
   ret i32 0
 
 tc.error:                                         ; preds = %tenary.true
@@ -168,40 +166,40 @@ tc.error:                                         ; preds = %tenary.true
   br label %tc.valid
 
 tc.valid:                                         ; preds = %tc.error, %tenary.true
-  %36 = fptosi double %26 to i1
-  %37 = xor i1 %36, true
-  %38 = uitofp i1 %37 to double
-  %39 = call i8* @malloc(i32 16)
-  %40 = bitcast i8* %39 to %literal*
-  %41 = getelementptr inbounds %literal, %literal* %40, i32 0, i32 0
-  %42 = getelementptr inbounds %literal, %literal* %40, i32 0, i32 1
-  store double 2.000000e+00, double* %41
-  store double %38, double* %42
-  %43 = getelementptr inbounds %literal, %literal* %40, i32 0, i32 1
-  %44 = load double, double* %43
-  %45 = fptosi double %44 to i1
-  br i1 %45, label %tenary.true2, label %tenary.false3
+  %34 = fptosi double %26 to i1
+  %35 = xor i1 %34, true
+  %36 = uitofp i1 %35 to double
+  %37 = call i8* @malloc(i32 16)
+  %38 = bitcast i8* %37 to %literal*
+  %39 = getelementptr inbounds %literal, %literal* %38, i32 0, i32 0
+  %40 = getelementptr inbounds %literal, %literal* %38, i32 0, i32 1
+  store double 2.000000e+00, double* %39
+  store double %36, double* %40
+  %41 = getelementptr inbounds %literal, %literal* %38, i32 0, i32 1
+  %42 = load double, double* %41
+  %43 = fptosi double %42 to i1
+  br i1 %43, label %tenary.true2, label %tenary.false3
 
 tenary.true2:                                     ; preds = %tc.valid
-  %46 = call i8* @malloc(i32 16)
-  %47 = bitcast i8* %46 to %literal*
-  %48 = getelementptr inbounds %literal, %literal* %47, i32 0, i32 0
-  %49 = getelementptr inbounds %literal, %literal* %47, i32 0, i32 1
-  store double 1.000000e+00, double* %48
-  store double 1.000000e+00, double* %49
+  %44 = call i8* @malloc(i32 16)
+  %45 = bitcast i8* %44 to %literal*
+  %46 = getelementptr inbounds %literal, %literal* %45, i32 0, i32 0
+  %47 = getelementptr inbounds %literal, %literal* %45, i32 0, i32 1
+  store double 1.000000e+00, double* %46
+  store double 1.000000e+00, double* %47
   br label %tenary.end4
 
 tenary.false3:                                    ; preds = %tc.valid
-  %50 = call i8* @malloc(i32 16)
-  %51 = bitcast i8* %50 to %literal*
-  %52 = getelementptr inbounds %literal, %literal* %51, i32 0, i32 0
-  %53 = getelementptr inbounds %literal, %literal* %51, i32 0, i32 1
-  store double 1.000000e+00, double* %52
-  store double 2.000000e+00, double* %53
+  %48 = call i8* @malloc(i32 16)
+  %49 = bitcast i8* %48 to %literal*
+  %50 = getelementptr inbounds %literal, %literal* %49, i32 0, i32 0
+  %51 = getelementptr inbounds %literal, %literal* %49, i32 0, i32 1
+  store double 1.000000e+00, double* %50
+  store double 2.000000e+00, double* %51
   br label %tenary.end4
 
 tenary.end4:                                      ; preds = %tenary.false3, %tenary.true2
-  %54 = phi %literal* [ %47, %tenary.true2 ], [ %51, %tenary.false3 ]
+  %52 = phi %literal* [ %45, %tenary.true2 ], [ %49, %tenary.false3 ]
   br label %tenary.end
 }
 

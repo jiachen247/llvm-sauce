@@ -13,8 +13,9 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
   lObj.functionContext = {
     function: mainFun,
     name: 'main',
-    env: programEnv.getPointer()!,
-    udef: undefined
+    env: programEnv,
+    udef: undefined,
+    phis: []
   }
 
   // This is guranteed to be a block
@@ -28,6 +29,7 @@ function evalProgramStatement(node: es.Program, _: Environment, lObj: LLVMObjs):
 
   try {
     l.verifyFunction(mainFun)
+    l.verifyModule(lObj.module)
   } catch (e) {
     console.error(lObj.module.print())
     throw e

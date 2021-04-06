@@ -45,15 +45,51 @@ function createEnv(count: number, lObj: LLVMObjs): l.Value {
   return lObj.builder.createBitCast(addr, literalStructPtrPtr)
 }
 
-// jump is the number of back pointers to follow in the env
-function lookupEnv(name: string, frame: Environment): Location {
+// guranteed to be in the imm frame
+function lookupEnvAndSetValue(name: string, frame: Environment, value: l.Value): Location {
   let jumps = 0
   let currentFrame = frame
 
   while (true) {
     if (currentFrame.contains(name)) {
-      const offset = currentFrame.get(name)!.offset
+      const record = currentFrame.get(name)!
+      record.value = value //!!! The difference !!!
+      const offset = record.offset
       return { jumps, offset }
+    }
+
+    const parent = currentFrame.getParent()
+    if (!parent) {
+      throw new Error('Cannot find name ' + name)
+    } else {
+      currentFrame = parent
+      jumps += 1
+    }
+  }
+}
+
+// jump is the number of back pointers to follow in the base env
+function lookupEnv(name: string, frame: Environment): Location {
+  let jumps = 0
+  let currentFrame = frame
+  let isLocal = true
+  let base = frame.getPointer()
+
+  while (true) {
+    if (currentFrame.contains(name)) {
+      const record = currentFrame.get(name)!
+      const offset = record.offset
+      return { jumps, offset, base, value: isLocal ? record.value! : undefined }
+    } else if (currentFrame.containsVirtual(name)) {
+      const value = currentFrame.getVirtual(name)!
+      return { jumps, offset: 0, base, value }
+    }
+
+    if (isLocal && currentFrame.isFunctionFrame()) {
+      // crosses function boundary
+      isLocal = false
+      base = currentFrame.getPointer()
+      jumps = 0
     }
 
     const parent = currentFrame.getParent()
@@ -149,14 +185,15 @@ function createNewFunctionEnvironment(
   parentAddress: l.Value, // passed as first arg
   lObj: LLVMObjs
 ) {
+  const paramNames = params.map(param => (param as es.Identifier).name)
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
   const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
 
-  const env = Environment.createNewEnvironment(parent)
+  const env = Environment.createNewEnvironment(true, parent, paramNames)
 
-  params.map(param => env.addRecord((param as es.Identifier).name))
+  paramNames.map(param => env.addRecord(param))
 
   // +1 for back / parent env pointer as first entry
   const environmentSize = params.length
@@ -180,7 +217,7 @@ function createNewEnvironment(
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
   const literalStructPtrPtrPtr = l.PointerType.get(literalStructPtrPtr, 0)
 
-  const env = Environment.createNewEnvironment(parent)
+  const env = Environment.createNewEnvironment(false, parent)
   const environmentSize = scanOutDir(body, env)
   const envValue = createEnv(environmentSize, lObj)
   env.setPointer(envValue)
@@ -200,7 +237,7 @@ function createNewEnvironment(
     const addr = lObj.builder.createInBoundsGEP(literalStructPtr, base, [
       l.ConstantInt.get(lObj.context, i)
     ])
-    lObj.builder.createStore(udef, addr, true)
+    lObj.builder.createStore(udef, addr)
   }
 
   return env
@@ -249,5 +286,6 @@ export {
   createNewEnvironment,
   createNewFunctionEnvironment,
   throwRuntimeTypeError,
-  createArgumentContainer
+  createArgumentContainer,
+  lookupEnvAndSetValue
 }

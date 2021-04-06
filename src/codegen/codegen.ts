@@ -71,7 +71,7 @@ function eval_toplevel(node: es.Program, tco: boolean) {
   buildRuntime(context, module, builder)
 
   // doesnt do anything currently
-  const globalEnv = new Environment(new Map<string, Record>())
+  const globalEnv = new Environment(true)
   const config = { tco }
   const functionContext = {}
   const lObj = { context, module, builder, config, functionContext }

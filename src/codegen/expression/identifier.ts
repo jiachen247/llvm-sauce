@@ -5,8 +5,14 @@ import { LLVMObjs } from '../../types/types'
 import { lookupEnv } from '../helper'
 
 function evalIdentifierExpression(node: es.Identifier, env: Environment, lObj: LLVMObjs): l.Value {
-  const { jumps, offset } = lookupEnv(node.name, env)
-  let frame = env.getPointer()!
+  const { jumps, offset, base, value } = lookupEnv(node.name, env)
+
+  if (value != undefined) {
+    // OPTIMIZATION: value already declared in function
+    return value
+  }
+
+  let frame = base!
 
   const literalStructType = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStructType, 0)!
@@ -22,7 +28,12 @@ function evalIdentifierExpression(node: es.Identifier, env: Environment, lObj: L
     l.ConstantInt.get(lObj.context, offset)
   ])
 
-  return lObj.builder.createLoad(addr)
+  const result = lObj.builder.createLoad(addr)
+
+  // cache as virtual
+  env.addVirtual(node.name, result)
+
+  return result
 }
 
 export { evalIdentifierExpression }

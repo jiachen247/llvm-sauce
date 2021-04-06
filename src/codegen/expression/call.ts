@@ -29,7 +29,10 @@ function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs
   const literalStruct = lObj.module.getTypeByName('literal')!
   const literalStructPtr = l.PointerType.get(literalStruct, 0)
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
-  const thisEnv = lObj.builder.createBitCast(lObj.functionContext.env!, literalStructPtrPtr)
+  const thisEnv = lObj.builder.createBitCast(
+    lObj.functionContext.env?.getPointer()!,
+    literalStructPtrPtr
+  )
 
   let target
 
@@ -39,6 +42,7 @@ function handleTailCall(params: Array<l.Value>, env: Environment, lObj: LLVMObjs
       l.ConstantInt.get(lObj.context, i + 1)
     ])
     lObj.builder.createStore(params[i], target)
+    lObj.functionContext.phis![i].addIncoming(params[i], lObj.builder.getInsertBlock()!)
   }
 
   return lObj.builder.createBr(lObj.functionContext.entry!)

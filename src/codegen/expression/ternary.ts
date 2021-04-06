@@ -47,6 +47,9 @@ function evalTernaryExpression(
     lObj.builder.createBr(endBlock)
   }
 
+  // cant share virtuals across consequent and alternative
+  env.resetVirtuals()
+
   lObj.builder.setInsertionPoint(alternativeBlock)
   const alternativeValue = evaluateExpression(node.alternate!, env, lObj)
   const altEndBlock = lObj.builder.getInsertBlock()!

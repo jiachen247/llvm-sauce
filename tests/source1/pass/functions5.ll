@@ -119,7 +119,7 @@ entry:
   store double 5.000000e+00, double* %9
   store double 0.000000e+00, double* %10
   %11 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  store volatile %literal* %8, %literal** %11
+  store %literal* %8, %literal** %11
   %12 = call i8* @malloc(i32 16)
   %13 = bitcast i8* %12 to %function_literal*
   %14 = getelementptr inbounds %function_literal, %function_literal* %13, i32 0, i32 0
@@ -143,12 +143,10 @@ entry:
   %26 = getelementptr inbounds %literal, %literal* %24, i32 0, i32 1
   store double 1.000000e+00, double* %25
   store double 2.000000e+02, double* %26
-  %27 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  %28 = load %literal*, %literal** %27
-  %29 = getelementptr inbounds %literal, %literal* %28, i32 0, i32 0
-  %30 = load double, double* %29
-  %31 = fcmp oeq double %30, 4.000000e+00
-  br i1 %31, label %next, label %error
+  %27 = getelementptr inbounds %literal, %literal* %17, i32 0, i32 0
+  %28 = load double, double* %27
+  %29 = fcmp oeq double %28, 4.000000e+00
+  br i1 %29, label %next, label %error
 
 error:                                            ; preds = %entry
   call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
@@ -156,19 +154,19 @@ error:                                            ; preds = %entry
   br label %next
 
 next:                                             ; preds = %error, %entry
-  %32 = bitcast %literal* %28 to %function_literal*
-  %33 = getelementptr inbounds %function_literal, %function_literal* %32, i32 0, i32 2
-  %34 = load %literal* (%literal**, %literal**)*, %literal* (%literal**, %literal**)** %33
-  %35 = getelementptr inbounds %function_literal, %function_literal* %32, i32 0, i32 1
-  %36 = load %literal**, %literal*** %35
+  %30 = bitcast %literal* %17 to %function_literal*
+  %31 = getelementptr inbounds %function_literal, %function_literal* %30, i32 0, i32 2
+  %32 = load %literal* (%literal**, %literal**)*, %literal* (%literal**, %literal**)** %31
+  %33 = getelementptr inbounds %function_literal, %function_literal* %30, i32 0, i32 1
+  %34 = load %literal**, %literal*** %33
   %params = call i8* @malloc(i32 16)
-  %37 = bitcast i8* %params to %literal**
-  %38 = getelementptr inbounds %literal*, %literal** %37, i32 0
-  store %literal* %20, %literal** %38
-  %39 = getelementptr inbounds %literal*, %literal** %37, i32 1
-  store %literal* %24, %literal** %39
-  %40 = call %literal* %34(%literal** %36, %literal** %37)
-  call void @display(%literal* %40)
+  %35 = bitcast i8* %params to %literal**
+  %36 = getelementptr inbounds %literal*, %literal** %35, i32 0
+  store %literal* %20, %literal** %36
+  %37 = getelementptr inbounds %literal*, %literal** %35, i32 1
+  store %literal* %24, %literal** %37
+  %38 = call %literal* %32(%literal** %34, %literal** %35)
+  call void @display(%literal* %38)
   ret i32 0
 }
 
@@ -215,26 +213,14 @@ if.true:                                          ; preds = %f.entry
   %23 = bitcast i8* %env2 to %literal**
   %24 = bitcast %literal** %23 to %literal***
   store %literal** %10, %literal*** %24
-  %25 = bitcast %literal** %23 to %literal***
-  %26 = load %literal**, %literal*** %25
-  %27 = bitcast %literal** %26 to %literal***
-  %28 = load %literal**, %literal*** %27
-  %29 = getelementptr inbounds %literal*, %literal** %28, i32 1
-  %30 = load %literal*, %literal** %29
-  ret %literal* %30
+  ret %literal* %5
 
 if.false:                                         ; preds = %f.entry
   %env3 = call i8* @malloc(i32 8)
-  %31 = bitcast i8* %env3 to %literal**
-  %32 = bitcast %literal** %31 to %literal***
-  store %literal** %10, %literal*** %32
-  %33 = bitcast %literal** %31 to %literal***
-  %34 = load %literal**, %literal*** %33
-  %35 = bitcast %literal** %34 to %literal***
-  %36 = load %literal**, %literal*** %35
-  %37 = getelementptr inbounds %literal*, %literal** %36, i32 2
-  %38 = load %literal*, %literal** %37
-  ret %literal* %38
+  %25 = bitcast i8* %env3 to %literal**
+  %26 = bitcast %literal** %25 to %literal***
+  store %literal** %10, %literal*** %26
+  ret %literal* %8
 
 if.end:                                           ; No predecessors!
   ret %literal* %13

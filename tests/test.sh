@@ -16,7 +16,7 @@ for i in ./tests/source?/*/*.js; do
     expected=$(cat $i | awk 'BEGIN{expected=0}/\/\/ *expected: */{expected = 1}//{if(expected){print $0}}' $1 \
         | sed -e 's/\/\/ expected: *\(.*\)/\1/') # expected output
     tmp=$(mktemp)
-    yarn node dist/index.js --tco $i -o $tmp &> /dev/null
+    yarn node dist/index.js $i -o $tmp &> /dev/null
     output=$(lli $tmp)
     if [ "$expected" != "$output" ]; then
         >&2 echo "Unexpected output in test $i"

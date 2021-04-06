@@ -119,7 +119,7 @@ entry:
   store double 5.000000e+00, double* %9
   store double 0.000000e+00, double* %10
   %11 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  store volatile %literal* %8, %literal** %11
+  store %literal* %8, %literal** %11
   %12 = call i8* @malloc(i32 16)
   %13 = bitcast i8* %12 to %function_literal*
   %14 = getelementptr inbounds %function_literal, %function_literal* %13, i32 0, i32 0
@@ -131,12 +131,10 @@ entry:
   %17 = bitcast %function_literal* %13 to %literal*
   %18 = getelementptr inbounds %literal*, %literal** %5, i32 1
   store %literal* %17, %literal** %18
-  %19 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  %20 = load %literal*, %literal** %19
-  %21 = getelementptr inbounds %literal, %literal* %20, i32 0, i32 0
-  %22 = load double, double* %21
-  %23 = fcmp oeq double %22, 4.000000e+00
-  br i1 %23, label %next, label %error
+  %19 = getelementptr inbounds %literal, %literal* %17, i32 0, i32 0
+  %20 = load double, double* %19
+  %21 = fcmp oeq double %20, 4.000000e+00
+  br i1 %21, label %next, label %error
 
 error:                                            ; preds = %entry
   call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
@@ -144,15 +142,15 @@ error:                                            ; preds = %entry
   br label %next
 
 next:                                             ; preds = %error, %entry
-  %24 = bitcast %literal* %20 to %function_literal*
-  %25 = getelementptr inbounds %function_literal, %function_literal* %24, i32 0, i32 2
-  %26 = load %literal* (%literal**, %literal**)*, %literal* (%literal**, %literal**)** %25
-  %27 = getelementptr inbounds %function_literal, %function_literal* %24, i32 0, i32 1
-  %28 = load %literal**, %literal*** %27
+  %22 = bitcast %literal* %17 to %function_literal*
+  %23 = getelementptr inbounds %function_literal, %function_literal* %22, i32 0, i32 2
+  %24 = load %literal* (%literal**, %literal**)*, %literal* (%literal**, %literal**)** %23
+  %25 = getelementptr inbounds %function_literal, %function_literal* %22, i32 0, i32 1
+  %26 = load %literal**, %literal*** %25
   %params = call i8* @malloc(i32 0)
-  %29 = bitcast i8* %params to %literal**
-  %30 = call %literal* %26(%literal** %28, %literal** %29)
-  call void @display(%literal* %30)
+  %27 = bitcast i8* %params to %literal**
+  %28 = call %literal* %24(%literal** %26, %literal** %27)
+  call void @display(%literal* %28)
   ret i32 0
 }
 
@@ -176,7 +174,7 @@ f.entry:                                          ; preds = %f.setup
   store double 5.000000e+00, double* %8
   store double 0.000000e+00, double* %9
   %10 = getelementptr inbounds %literal*, %literal** %4, i32 1
-  store volatile %literal* %7, %literal** %10
+  store %literal* %7, %literal** %10
   %11 = getelementptr inbounds %literal*, %literal** %4, i32 1
   %12 = load %literal*, %literal** %11
   call void @display(%literal* %12)

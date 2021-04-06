@@ -117,7 +117,7 @@ entry:
   store double 5.000000e+00, double* %9
   store double 0.000000e+00, double* %10
   %11 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  store volatile %literal* %8, %literal** %11
+  store %literal* %8, %literal** %11
   %12 = call i8* @malloc(i32 16)
   %13 = bitcast i8* %12 to %literal*
   %14 = getelementptr inbounds %literal, %literal* %13, i32 0, i32 0
@@ -131,7 +131,7 @@ entry:
   %18 = bitcast %literal** %17 to %literal***
   store %literal** %5, %literal*** %18
   %19 = getelementptr inbounds %literal*, %literal** %17, i32 1
-  store volatile %literal* %8, %literal** %19
+  store %literal* %8, %literal** %19
   %20 = call i8* @malloc(i32 16)
   %21 = bitcast i8* %20 to %literal*
   %22 = getelementptr inbounds %literal, %literal* %21, i32 0, i32 0
@@ -140,9 +140,7 @@ entry:
   store double 2.000000e+00, double* %23
   %24 = getelementptr inbounds %literal*, %literal** %17, i32 1
   store %literal* %21, %literal** %24
-  %25 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  %26 = load %literal*, %literal** %25
-  call void @display(%literal* %26)
+  call void @display(%literal* %13)
   ret i32 0
 }
 

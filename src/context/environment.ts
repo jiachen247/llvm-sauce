@@ -11,27 +11,40 @@ enum Type {
 interface Location {
   jumps: number
   offset: number
+  base?: l.Value
+  value?: l.Value // only if already declared within the function
 }
 
 interface Record {
   offset: number
   type?: Type
   signature?: [Type[], Type[]]
+  value?: l.Value
 }
 
 class Environment {
   private names: Map<string, Record>
+  private virtuals: Map<string, l.Value>
   private parent?: Environment
   private ptr?: Value // this stores the actual pointer to the frame
   private counter: number
-  constructor(theNames: Map<string, Record>, parent?: Environment) {
-    this.names = theNames
+  private isFunction: boolean
+  private formals?: Array<string>
+  constructor(isFunction: boolean, parent?: Environment, formals?: Array<string>) {
+    this.names = new Map<string, Record>()
+    this.virtuals = new Map<string, l.Value>()
     this.parent = parent
     this.counter = 0
+    this.isFunction = isFunction
+    this.formals = formals
   }
 
-  static createNewEnvironment(parent?: Environment): Environment {
-    return new Environment(new Map<string, Record>(), parent)
+  static createNewEnvironment(
+    isFunction: boolean = false,
+    parent?: Environment,
+    formals: Array<string> = []
+  ): Environment {
+    return new Environment(isFunction, parent, formals)
   }
 
   addRecord(name: string) {
@@ -49,8 +62,20 @@ class Environment {
     return this.names.has(name)
   }
 
+  containsVirtual(name: string): boolean {
+    return this.virtuals.has(name)
+  }
+
+  addVirtual(name: string, value: l.Value) {
+    this.virtuals.set(name, value)
+  }
+
   get(name: string): Record | undefined {
     return this.names.get(name)
+  }
+
+  getVirtual(name: string): l.Value | undefined {
+    return this.virtuals.get(name)
   }
 
   getOffset(name: string): number | undefined {
@@ -81,6 +106,18 @@ class Environment {
   getNextOffset() {
     this.counter += 1
     return this.counter
+  }
+
+  isFunctionFrame() {
+    return this.isFunction
+  }
+
+  getFormals(): Array<string> {
+    return this.formals!
+  }
+
+  resetVirtuals() {
+    this.virtuals = new Map<string, l.Value>()
   }
 }
 

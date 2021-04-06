@@ -4,17 +4,20 @@ import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
 import { evaluateExpression } from '../codegen'
 import { createUndefinedLiteral, createFunctionLiteral } from '../expression/literal'
-import { createNewFunctionEnvironment, lookupEnv } from '../helper'
+import { createNewFunctionEnvironment, lookupEnvAndSetValue } from '../helper'
 import { evalBlockStatement } from '../statement/block'
+import { containTailCalls } from '../tailcall'
 
 function formatFunctionName(name?: string) {
   return name ? `__${name}` : `__anon`
 }
+
 function evalFunctionExpression(
   node: es.BaseFunction,
   parent: Environment,
   isExpressionBased: boolean,
   lObj: LLVMObjs,
+  containsTailCalls: boolean,
   name?: string
 ): l.Value {
   const resumePoint = lObj.builder.getInsertBlock()!
@@ -49,7 +52,7 @@ function evalFunctionExpression(
 
   const env = createNewFunctionEnvironment(
     node.params,
-    isExpressionBased ? Array<es.Node>() : (node.body as es.BlockStatement).body,
+    isExpressionBased ? [] : (node.body as es.BlockStatement).body,
     parent,
     enclosingFrame,
     lObj
@@ -57,16 +60,22 @@ function evalFunctionExpression(
 
   const params = lObj.builder.createBitCast(paramsAddr, literalStructPtrPtr)
   const thisEnv = lObj.builder.createBitCast(env.getPointer()!, literalStructPtrPtr)
+  const paramsNames = node.params.map(param => (param as es.Identifier).name)
+  let paramValues = []
   let base, value, target
   for (let i = 0; i < numberOfParameters; i++) {
     base = lObj.builder.createInBoundsGEP(literalStructPtr, params, [
       l.ConstantInt.get(lObj.context, i)
     ])
+    
     value = lObj.builder.createLoad(base)
+    env.get(paramsNames[i])!.value = value
+    
     target = lObj.builder.createInBoundsGEP(literalStructPtr, thisEnv, [
       l.ConstantInt.get(lObj.context, i + 1)
     ])
     lObj.builder.createStore(value, target)
+    paramValues.push(value)
   }
 
   // ======
@@ -76,9 +85,19 @@ function evalFunctionExpression(
   lObj.functionContext = {
     function: fun,
     name: name,
-    env: env.getPointer()!,
+    env: env,
     entry: entry,
-    udef: undefined
+    udef: undefined,
+    phis: []
+  }
+
+  if (containsTailCalls) {
+    for (let i = 0; i < numberOfParameters; i++) {
+        const phi = lObj.builder.createPhi(literalStructPtr, 2)
+        phi.addIncoming(paramValues[i], setup)
+        lObj.functionContext!.phis!.push(phi)
+        env.get(paramsNames[i])!.value = phi
+    }
   }
   if (isExpressionBased) {
     // lambda expression
@@ -112,7 +131,7 @@ function evalArrowFunctionExpression(
   parent: Environment,
   lObj: LLVMObjs
 ) {
-  return evalFunctionExpression(node, parent, node.expression, lObj)
+  return evalFunctionExpression(node, parent, node.expression, lObj, false)
 }
 
 function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment, lObj: LLVMObjs) {
@@ -121,12 +140,14 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
   const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)
 
   const name = node.id!.name
-  const lit = evalFunctionExpression(node, parent, false, lObj, name)
+
+  const lit = evalFunctionExpression(node, parent, false, lObj, lObj.config.tco ? containTailCalls(node, name) : false, name)
 
   let frame = parent.getPointer()!
   // for source 1 it should be the immediate frame
-  const { jumps, offset } = lookupEnv(name, parent)
+  const { jumps, offset } = lookupEnvAndSetValue(name, parent, lit)
 
+  // jump should always be zero
   for (let i = 0; i < jumps; i++) {
     const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!)
     frame = lObj.builder.createLoad(tmp)
@@ -138,6 +159,9 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
   ])
 
   lObj.builder.createStore(lit, ptr, false)
+
+  // cache as virtual
+  parent.addVirtual(name, lit)
 
   return lit
 }

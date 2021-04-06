@@ -2,7 +2,7 @@ import * as es from 'estree'
 import * as l from 'llvm-node'
 import { Environment } from '../../context/environment'
 import { LLVMObjs } from '../../types/types'
-import { lookupEnv } from '../helper'
+import { lookupEnvAndSetValue } from '../helper'
 import { evaluateExpression } from '../codegen'
 import { createUndefinedLiteral } from '../expression/literal'
 
@@ -20,6 +20,7 @@ function evalVariableDeclarationExpression(
   // should always hit here in source one (parser will enfore this for us)
   if (init) {
     value = evaluateExpression(init!, env, lObj)
+
     let frame = env.getPointer()!
 
     // write pointer to value to env frame
@@ -27,8 +28,9 @@ function evalVariableDeclarationExpression(
     const literalStructPtr = l.PointerType.get(literalType, 0)!
     const literalStructPtrPtr = l.PointerType.get(literalStructPtr, 0)!
 
-    const { jumps, offset } = lookupEnv(name, env)
+    const { jumps, offset } = lookupEnvAndSetValue(name, env, value)
 
+    // this is sort of pointless as jumps should always be zero for assignments
     for (let i = 0; i < jumps; i++) {
       const tmp = lObj.builder.createBitCast(frame, l.PointerType.get(frame.type, 0)!)
       frame = lObj.builder.createLoad(tmp)

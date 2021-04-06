@@ -117,7 +117,7 @@ entry:
   store double 5.000000e+00, double* %9
   store double 0.000000e+00, double* %10
   %11 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  store volatile %literal* %8, %literal** %11
+  store %literal* %8, %literal** %11
   %12 = call i8* @malloc(i32 16)
   %13 = bitcast i8* %12 to %literal*
   %14 = getelementptr inbounds %literal, %literal* %13, i32 0, i32 0
@@ -151,9 +151,7 @@ tenary.end:                                       ; preds = %tenary.false, %tena
   %27 = phi %literal* [ %20, %tenary.true ], [ %24, %tenary.false ]
   %28 = getelementptr inbounds %literal*, %literal** %5, i32 1
   store %literal* %27, %literal** %28
-  %29 = getelementptr inbounds %literal*, %literal** %5, i32 1
-  %30 = load %literal*, %literal** %29
-  call void @display(%literal* %30)
+  call void @display(%literal* %27)
   ret i32 0
 }
 
