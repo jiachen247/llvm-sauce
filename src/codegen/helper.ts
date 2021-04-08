@@ -132,7 +132,13 @@ function display(args: l.Value[], env: Environment, lObj: LLVMObjs): l.Value {
 }
 
 function errorWithString(str: string, lObj: LLVMObjs) {
-  const value = lObj.builder.createGlobalStringPtr(str)
+  let value
+  if (lObj.typeErrorString) {
+    value = lObj.typeErrorString!
+  } else {
+    value = lObj.builder.createGlobalStringPtr(str)
+    lObj.typeErrorString = value
+  }
   errorWithValue(value, lObj)
 }
 

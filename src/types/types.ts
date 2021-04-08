@@ -20,6 +20,7 @@ interface LLVMObjs {
   builder: l.IRBuilder
   config: Config
   functionContext: FunctionContext
+  typeErrorString?: l.Value
 }
 
 export { LLVMObjs }
