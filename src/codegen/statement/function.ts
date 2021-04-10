@@ -67,10 +67,10 @@ function evalFunctionExpression(
     base = lObj.builder.createInBoundsGEP(literalStructPtr, params, [
       l.ConstantInt.get(lObj.context, i)
     ])
-    
+
     value = lObj.builder.createLoad(base)
     env.get(paramsNames[i])!.value = value
-    
+
     target = lObj.builder.createInBoundsGEP(literalStructPtr, thisEnv, [
       l.ConstantInt.get(lObj.context, i + 1)
     ])
@@ -93,10 +93,10 @@ function evalFunctionExpression(
 
   if (containsTailCalls) {
     for (let i = 0; i < numberOfParameters; i++) {
-        const phi = lObj.builder.createPhi(literalStructPtr, 2)
-        phi.addIncoming(paramValues[i], setup)
-        lObj.functionContext!.phis!.push(phi)
-        env.get(paramsNames[i])!.value = phi
+      const phi = lObj.builder.createPhi(literalStructPtr, 2)
+      phi.addIncoming(paramValues[i], setup)
+      lObj.functionContext!.phis!.push(phi)
+      env.get(paramsNames[i])!.value = phi
     }
   }
   if (isExpressionBased) {
@@ -141,7 +141,14 @@ function evalFunctionStatement(node: es.FunctionDeclaration, parent: Environment
 
   const name = node.id!.name
 
-  const lit = evalFunctionExpression(node, parent, false, lObj, lObj.config.tco ? containTailCalls(node, name) : false, name)
+  const lit = evalFunctionExpression(
+    node,
+    parent,
+    false,
+    lObj,
+    lObj.config.tco ? containTailCalls(node, name) : false,
+    name
+  )
 
   let frame = parent.getPointer()!
   // for source 1 it should be the immediate frame

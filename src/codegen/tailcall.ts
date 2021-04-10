@@ -6,28 +6,29 @@ const DELIMETER = '#'
 function statementContainTailCalls(statement: es.Statement, functionName: string): boolean {
   if (statement.type === 'ReturnStatement') {
     const arg = (statement as es.ReturnStatement).argument
-      if (arg) {
-        if(findTailCalls(arg, functionName)) {
-          return true
-        }
+    if (arg) {
+      if (findTailCalls(arg, functionName)) {
+        return true
       }
+    }
   } else if (statement.type === 'IfStatement') {
     const ifstatment = statement as es.IfStatement
-      if (statementContainTailCalls(ifstatment.consequent, functionName)) {
-        return true
-      }else if (ifstatment.alternate && statementContainTailCalls(ifstatment.alternate, functionName)) {
-        return true
-      }
+    if (statementContainTailCalls(ifstatment.consequent, functionName)) {
+      return true
+    } else if (
+      ifstatment.alternate &&
+      statementContainTailCalls(ifstatment.alternate, functionName)
+    ) {
+      return true
+    }
   } else if (statement.type === 'BlockStatement') {
     const statements: Array<es.Statement> = (statement as es.BlockStatement).body
 
     for (let statement of statements) {
-        if (statementContainTailCalls(statement, functionName)) {
-          return true
-        }
+      if (statementContainTailCalls(statement, functionName)) {
+        return true
+      }
     }
-
-    
   }
 
   return false
