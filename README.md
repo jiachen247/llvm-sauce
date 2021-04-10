@@ -30,12 +30,22 @@ System Dependencies include
 - G++
 - CMake
 
-Refer to this [gist](https://gist.github.com/jiachen247/d6e85aedd34fa570284dd981ae3f00bb) for a seperate guide on installing all the necessary system dependencies including the LLVM framework on an Ubuntu VM.
+[Refer to this seperate guide on installing all the necessary system dependencies including the LLVM framework on an Ubuntu VM.](https://gist.github.com/jiachen247/d6e85aedd34fa570284dd981ae3f00bb)
 
 ### Setup
-1. Clone repositry to your local file system with `git clone https://github.com/jiachen247/llvm-sauce.git`
-2. Go into the project directory and install dependenceies with `yarn install`
-3. To build the project run `yarn build`
+1. Clone repositry to your local file system
+2. Go into the project directory 
+3. Install dependencies
+4. Build project
+5. Run tests to ensure that everything is working!
+
+```
+$ git clone https://github.com/jiachen247/llvm-sauce.git
+$ cd llvm-sauce
+$ yarn install
+$ yarn build
+$ yarn test
+```
 
 ### Compiling a Source file
 - todo
