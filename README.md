@@ -123,7 +123,8 @@ The `./src` folder is laid out in the following way:
 ```
  
 ### Testing
- 
+Test cases can be found under `./tests` with the source files as well as the generated IR. Tests consist comprehensive set of custom test cases we developed as well as examples from SICP chapter 1.
+
 #### Run Custom Test Cases
 To run custom test cases, run the following:
  
