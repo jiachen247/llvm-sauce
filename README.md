@@ -31,6 +31,8 @@ System Dependencies:
 - CMake
  
 [Refer to this seperate guide on installing all the necessary system dependencies including the LLVM framework on an Ubuntu VM.](https://gist.github.com/jiachen247/d6e85aedd34fa570284dd981ae3f00bb)
+
+[Refer to this seperate guide on installing system dependencies using Nix.](https://gist.github.com/jiachen247/26c7ac35c8d78f43f7ddcff59441e9d9)
  
 ### Setup
 1. Clone repository to your local file system
@@ -45,30 +47,6 @@ $ cd llvm-sauce
 $ yarn install
 $ yarn build
 ```
-
-### Nix specifics
-
-For Nix we require some extra packages. Use this `shell.nix`, it gets you everything in one shot:
-```
-with import <nixpkgs> {};
-
-pkgs.stdenv.mkDerivation rec {
-  name = "yarn";
-  buildInputs = with pkgs; [
-    xorg.libX11
-    xorg.libX11.dev
-    xorg.libXext
-    yarn
-    nodejs
-    llvm
-    cmake
-  ];
-
-  LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
-}
-```
-The extra packages are required due to `js-slang` needing some package that needs to access the GPU.
-After running `nix-shell` you will want to resume installation from `yarn install` onwards.
  
 ### Compiling a Source file
 After installation you can compile a Source program with the following command (substitute `program.js` for the file containing the program to be compiled):
