@@ -15,9 +15,7 @@ source_filename = "module"
 @s.1 = private unnamed_addr constant [4 x i8] c"456\00", align 1
 @0 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 @s.2 = private unnamed_addr constant [4 x i8] c"789\00", align 1
-@1 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 @s.3 = private unnamed_addr constant [6 x i8] c"!!!!!\00", align 1
-@2 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 
 declare i8* @malloc(i32)
 
@@ -228,7 +226,7 @@ add.cstr24:                                       ; preds = %add.cstr13
   br i1 %69, label %add.str7, label %add.err5
 
 add.err5:                                         ; preds = %add.cstr24, %add.cstr13, %add.num12
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @1, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %add.num6
 
@@ -294,7 +292,7 @@ add.cstr211:                                      ; preds = %add.cstr110
   br i1 %106, label %add.str14, label %add.err12
 
 add.err12:                                        ; preds = %add.cstr211, %add.cstr110, %add.num19
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %add.num13
 

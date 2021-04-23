@@ -12,10 +12,6 @@ source_filename = "module"
 @format_undef = private unnamed_addr constant [11 x i8] c"undefined\0A\00", align 1
 @format_error = private unnamed_addr constant [13 x i8] c"error: \22%s\22\0A\00", align 1
 @0 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@1 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@2 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@3 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@4 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 
 declare i8* @malloc(i32)
 
@@ -147,7 +143,7 @@ entry:
   br i1 %25, label %next, label %error
 
 error:                                            ; preds = %entry
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @4, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %next
 
@@ -265,7 +261,7 @@ tc.next2:                                         ; preds = %tenary.false
   br i1 %54, label %tc.valid4, label %tc.error3
 
 tc.error3:                                        ; preds = %tc.next2, %tenary.false
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @1, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %tc.valid4
 
@@ -287,7 +283,7 @@ tc.valid4:                                        ; preds = %tc.error3, %tc.next
   br i1 %66, label %next, label %error
 
 error:                                            ; preds = %tc.valid4
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %next
 
@@ -318,7 +314,7 @@ tc.next5:                                         ; preds = %next
   br i1 %84, label %tc.valid7, label %tc.error6
 
 tc.error6:                                        ; preds = %tc.next5, %next
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @3, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %tc.valid7
 

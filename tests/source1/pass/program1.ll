@@ -12,7 +12,6 @@ source_filename = "module"
 @format_undef = private unnamed_addr constant [11 x i8] c"undefined\0A\00", align 1
 @format_error = private unnamed_addr constant [13 x i8] c"error: \22%s\22\0A\00", align 1
 @0 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@1 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 @s = private unnamed_addr constant [13 x i8] c"Hello world!\00", align 1
 @s.1 = private unnamed_addr constant [4 x i8] c"boo\00", align 1
 
@@ -201,7 +200,7 @@ tc.next3:                                         ; preds = %tc.valid
   br i1 %57, label %tc.valid5, label %tc.error4
 
 tc.error4:                                        ; preds = %tc.next3, %tc.valid
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @1, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %tc.valid5
 

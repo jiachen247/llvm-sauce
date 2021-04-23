@@ -13,11 +13,6 @@ source_filename = "module"
 @format_undef = private unnamed_addr constant [11 x i8] c"undefined\0A\00", align 1
 @format_error = private unnamed_addr constant [13 x i8] c"error: \22%s\22\0A\00", align 1
 @0 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@1 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@2 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@3 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@4 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
-@5 = private unnamed_addr constant [18 x i8] c"boo type mismatch\00", align 1
 
 declare i8* @malloc(i32)
 
@@ -171,7 +166,7 @@ entry:
   br i1 %38, label %next, label %error
 
 error:                                            ; preds = %entry
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @4, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %next
 
@@ -202,7 +197,7 @@ next:                                             ; preds = %error, %entry
   br i1 %55, label %next3, label %error2
 
 error2:                                           ; preds = %next
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @5, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %next3
 
@@ -326,7 +321,7 @@ next:                                             ; preds = %error, %f.entry
   br i1 %38, label %next3, label %error2
 
 error2:                                           ; preds = %next
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @1, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %next3
 
@@ -397,7 +392,7 @@ add.cstr2:                                        ; preds = %add.cstr1
   br i1 %28, label %add.str, label %add.err
 
 add.err:                                          ; preds = %add.cstr2, %add.cstr1, %add.num1
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %add.num
 
@@ -480,7 +475,7 @@ tc.next:                                          ; preds = %f.entry
   br i1 %26, label %tc.valid, label %tc.error
 
 tc.error:                                         ; preds = %tc.next, %f.entry
-  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @3, i32 0, i32 0))
+  call void @error(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @0, i32 0, i32 0))
   call void @exit(i32 1)
   br label %tc.valid
 
