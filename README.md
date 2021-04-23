@@ -46,7 +46,7 @@ $ yarn install
 $ yarn build
 ```
 
-### NixOS specifics
+### Nix specifics
 
 For Nix we require some extra packages. Use this `shell.nix`, it gets you everything in one shot:
 ```
@@ -67,6 +67,7 @@ pkgs.stdenv.mkDerivation rec {
   LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
 }
 ```
+The extra packages are required due to `js-slang` needing some package that needs to access the GPU.
 After running `nix-shell` you will want to resume installation from `yarn install` onwards.
  
 ### Compiling a Source file
