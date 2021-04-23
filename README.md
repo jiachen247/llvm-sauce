@@ -45,6 +45,29 @@ $ cd llvm-sauce
 $ yarn install
 $ yarn build
 ```
+
+### NixOS specifics
+
+For Nix we require some extra packages. Use this `shell.nix`, it gets you everything in one shot:
+```
+with import <nixpkgs> {};
+
+pkgs.stdenv.mkDerivation rec {
+  name = "yarn";
+  buildInputs = with pkgs; [
+    xorg.libX11
+    xorg.libX11.dev
+    xorg.libXext
+    yarn
+    nodejs
+    llvm
+    cmake
+  ];
+
+  LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
+}
+```
+After running `nix-shell` you will want to resume installation from `yarn install` onwards.
  
 ### Compiling a Source file
 After installing dependencies and building the project you can compile a Souce file to llvm with the following command where `program.js` is a file contain the Source 1 program to be compiled.
