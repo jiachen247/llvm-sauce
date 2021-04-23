@@ -1,6 +1,8 @@
 # :rocket: LLVM Sauce 
  
-LLVM Sauce is a Source (https://source-academy.github.io/source/) compiler built with the LLVM framework. More specifically, it implements a source frontend that takes in source and outputs LLVM Intermediate Representation (IR). This IR can then be optimized, interpreted or compiled futhur with the LLVM tools.
+LLVM Sauce is a [Source](https://source-academy.github.io/source/) to LLVM compiler.
+More specifically, it implements a frontend that takes in a Source program and outputs LLVM Intermediate Representation (IR).
+This IR can then be optimized, interpreted or compiled further with other tools.
  
 **[A technical specification for the compiler can be found at here.](https://github.com/jiachen247/llvm-sauce/blob/master/specification.pdf)**
  
@@ -10,22 +12,20 @@ LLVM Sauce is a Source (https://source-academy.github.io/source/) compiler built
 - A fully featured [Source 1](https://source-academy.github.io/source/source_1/) language compiler
 - A compiler that respects the Proper Tail Call (PTC) semantics of [ECMAScript 2015 Language Specification](https://262.ecma-international.org/6.0/#sec-preparefortailcall)
  
- 
 ## Getting Started
  
 ### System Requirements
 - A 64 bit Linux System
  
 Notes:
-- Currently build and tested on `Ubuntu 20.04.1 LTS x86_64 GNU/Linux` with `LLVM 10.0.0`.
-- Windows and MacOS are not currently supported due to CMake dependencies on `llvm-node`.
+- Currently build and tested on `Ubuntu 20.04.1`, `Debian Buster`, `NixOS 20.09` with `LLVM 10.0.0`.
+- Windows and MacOS are currently unsupported due to CMake dependencies on `llvm-node`.
  
 ### Installing System Dependencies
-Feel free to skip this section if you already have the dependencies installed.
- 
-System Dependencies include
-- LLVM Framework v10.0.0+
-- Nodejs 10+
+
+System Dependencies:
+- LLVM Framework (technically any version should work)
+- Nodejs
 - Yarn
 - G++
 - CMake
@@ -34,8 +34,8 @@ System Dependencies include
  
 ### Setup
 1. Clone repository to your local file system
-2. Go into the project directory 
-3. Install dependencies
+2. Enter the project directory 
+3. Install node dependencies
 4. Build project
 5. Run tests to ensure that everything is working!
  
@@ -71,13 +71,12 @@ The extra packages are required due to `js-slang` needing some package that need
 After running `nix-shell` you will want to resume installation from `yarn install` onwards.
  
 ### Compiling a Source file
-After installing dependencies and building the project you can compile a Souce file to llvm with the following command where `program.js` is a file contain the Source 1 program to be compiled.
- 
+After installation you can compile a Source program with the following command (substitute `program.js` for the file containing the program to be compiled):
 ```
 $ node ./dist/index.js program.js
 ```
  
-Note the follow available compiler flags,
+Note the following available compiler flags:
  
 - `-o FILE` , `output=FILE`: Write LLVM target LLVM IR bytecode to a file specified by `FILE`
 - `-t` , `--tco`:  Optimize tail recursive calls to respect ES6 PTC semantics
@@ -90,11 +89,10 @@ $ node ./dist/index.js --tco program.js
 ```
  
 ### Running LLVM IR
-Once you have compiled your program to LLVM IR, LLVM has two ways of running this IR (assuming you have installed LLVM) by interpreting or compiling it further to machine code.
+Once you have compiled your program to LLVM IR, LLVM has two ways of running this IR by interpreting or compiling it further to machine code.
  
 #### LLVM Interpreter (lli)
 You can use `lli` by running the following:
- 
 ```
 $ node ./dist/index.js program.js -o program.ll
 $ lli program.ll
@@ -102,21 +100,19 @@ $ lli program.ll
  
 #### LLVM Compiler (llc)
 You can use `llc` by running the following:
- 
 ```
 $ node ./dist/index.js program.js -o program.ll
 $ llc program.ll -O3  -o program.s
 $ g++ --std=c++11 -no-pie program.s -o program
 $ ./program
 ```
- 
-Note you can specify `-O1` to `-O3` to specify the llc optimization level.
+You can specify `-O1`, `-O2`, or `-O3` to specify the llc optimization level.
  
 ## Development Guide
-In this section, we detail some of the application specific to help anyone get started on the project.
+In this section is some information that might be helpful for developers who want to contribute to the project.
  
 ### Application Structure
-The `./src` folder is layout in the following way:
+The `./src` folder is laid out in the following way:
  
 ```
 ├── codegen
@@ -151,7 +147,7 @@ The `./src` folder is layout in the following way:
 ### Testing
  
 #### Run Custom Test Cases
-To run tests custom test cases, run the following:
+To run custom test cases, run the following:
  
 ```
 $ yarn test
@@ -176,4 +172,3 @@ To format all the TypeScript files under `./src` run:
 ```
 $ yarn format
 ```
-
