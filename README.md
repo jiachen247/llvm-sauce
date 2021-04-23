@@ -2,7 +2,7 @@
  
 LLVM Sauce is a Source (https://source-academy.github.io/source/) compiler built with the LLVM framework. More specifically, it implements a source frontend that takes in source and outputs LLVM Intermediate Representation (IR). This IR can then be optimized, interpreted or compiled futhur with the LLVM tools.
  
-**[A technical specification for the compiler can be found at here.](https://github.com/jiachen247/llvm-sauce/raw/master/specification.pdf)**
+**[A technical specification for the compiler can be found at here.](https://github.com/jiachen247/llvm-sauce/blob/master/specification.pdf)**
  
 ![](https://i.imgur.com/NExfvra.png)
  
