@@ -1,6 +1,6 @@
 # :rocket: LLVM Sauce 
  
-LLVM Sauce is yummy a [Source](https://source-academy.github.io/source/) to LLVM IR compiler.
+LLVM Sauce is a yummy [Source](https://source-academy.github.io/source/) to LLVM IR compiler.
 More specifically, it implements a frontend that takes in a Source program and outputs LLVM Intermediate Representation (IR).
 This IR can then be optimized, interpreted or compiled further with other tools.
  
